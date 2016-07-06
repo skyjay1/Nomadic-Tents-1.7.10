@@ -7,11 +7,4 @@ public class ClientProxy extends CommonProxy
 	{
 
 	}
-	/*
-	@Override
-	public Path getOrCreateSaveBackupsFolder() throws IOException 
-	{
-		return new File(Minecraft.getMinecraft().mcDataDir, "saves").toPath();
-	}
-	*/
 }

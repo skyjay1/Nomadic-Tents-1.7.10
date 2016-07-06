@@ -1,7 +1,7 @@
-package com.yurtmod.content;
+package com.yurtmod.blocks;
 
-import com.yurtmod.dimension.StructureHelper.IYurtBlock;
 import com.yurtmod.main.NomadicTents;
+import com.yurtmod.structure.StructureHelper.IYurtBlock;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -54,22 +54,11 @@ public class BlockYurtWall extends BlockUnbreakable implements IYurtBlock
 	
 	private void updateMetadata(World worldIn, int myX, int myY, int myZ)
 	{
-		int metaToSet = 0;
-		if(worldIn.getBlock(myX, myY - 1, myZ) == this)
+		boolean above = worldIn.getBlock(myX, myY - 1, myZ) == this && worldIn.getBlock(myX, myY - 2, myZ) != this;
+		int metaToSet = above ? 1 : 0;
+		if(metaToSet != worldIn.getBlockMetadata(myX, myY, myZ))
 		{
-			if(worldIn.getBlock(myX, myY - 2, myZ) == this)
-			{
-				metaToSet = 0;
-			}
-			else 
-			{
-				metaToSet = 1;
-			}
+			worldIn.setBlockMetadataWithNotify(myX, myY, myZ, metaToSet, 3);
 		}
-		else
-		{
-			metaToSet = 0;
-		}
-		worldIn.setBlockMetadataWithNotify(myX, myY, myZ, metaToSet, 3);
 	}
 }

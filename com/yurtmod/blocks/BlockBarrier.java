@@ -1,17 +1,19 @@
-package com.yurtmod.content;
+package com.yurtmod.blocks;
 
 import java.util.List;
 
-import com.yurtmod.dimension.StructureHelper.ITepeeBlock;
-import com.yurtmod.dimension.StructureHelper.IYurtBlock;
 import com.yurtmod.main.NomadicTents;
+import com.yurtmod.structure.StructureHelper.IBedouinBlock;
+import com.yurtmod.structure.StructureHelper.IFrameBlock;
+import com.yurtmod.structure.StructureHelper.ITepeeBlock;
+import com.yurtmod.structure.StructureHelper.IYurtBlock;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
-public class BlockBarrier extends BlockUnbreakable implements IYurtBlock, ITepeeBlock
+public class BlockBarrier extends BlockUnbreakable implements IYurtBlock, ITepeeBlock, IBedouinBlock
 {
 	public BlockBarrier() 
 	{

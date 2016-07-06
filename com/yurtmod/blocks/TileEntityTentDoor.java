@@ -1,9 +1,10 @@
-package com.yurtmod.content;
+package com.yurtmod.blocks;
 
-import com.yurtmod.dimension.StructureHelper;
-import com.yurtmod.dimension.StructureType;
+import com.yurtmod.dimension.TentDimension;
 import com.yurtmod.dimension.TentTeleporter;
 import com.yurtmod.main.Config;
+import com.yurtmod.structure.StructureHelper;
+import com.yurtmod.structure.StructureType;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -15,26 +16,17 @@ public class TileEntityTentDoor extends TileEntity
 {
 	private static final String KEY_OFFSET_X = "TentOffsetX";
 	private static final String KEY_OFFSET_Z = "TentOffsetZ";
-	private static final String KEY_LAST_X = "PlayerPreviousX";
-	private static final String KEY_LAST_Y = "PlayerPreviousY";
-	private static final String KEY_LAST_Z = "PlayerPreviousZ";
-	private static final String KEY_PREV_DIM = "PlayerPreviousDimension";
+	private static final String KEY_LAST_COORDS = "PlayerPreviousCoords";
 	private static final String KEY_STRUCTURE_TYPE = "StructureTypeOrdinal";
-	private StructureType structure;
-	private int offsetX;
-	private int offsetZ;	
-	private double prevX, prevY, prevZ;
-	private int prevDimID;
+	private StructureType structure = StructureType.YURT_SMALL;
+	private int offsetX = 0;
+	private int offsetZ = 0;	
+	private double prevX = 0.0D, prevY = 64.0D, prevZ = 0.0D;
+	private int prevDimID = 0;
 
 	public TileEntityTentDoor()
 	{
-		//super();
-		if(structure == null)
-		{
-			this.structure = StructureType.YURT_SMALL;
-			// debug:
-			//System.out.println("Warning:  structure has defaulted to YURT_SMALL");
-		}
+		super();
 	}
 
 	public TileEntityTentDoor(StructureType type)
@@ -47,14 +39,14 @@ public class TileEntityTentDoor extends TileEntity
 	public void readFromNBT(NBTTagCompound nbt)
 	{
 		super.readFromNBT(nbt);
-		int structureOrdinal = nbt.getInteger(KEY_STRUCTURE_TYPE);
-		this.structure = StructureType.values()[structureOrdinal];
+		this.structure = StructureType.get(nbt.getInteger(KEY_STRUCTURE_TYPE));
 		this.offsetX = nbt.getInteger(KEY_OFFSET_X);
 		this.offsetZ = nbt.getInteger(KEY_OFFSET_Z);
-		this.prevX = nbt.getDouble(KEY_LAST_X);
-		this.prevY = nbt.getDouble(KEY_LAST_Y);
-		this.prevZ = nbt.getDouble(KEY_LAST_Z);
-		this.prevDimID = nbt.getInteger(KEY_PREV_DIM);
+		NBTTagCompound nbtCoords = nbt.getCompoundTag(KEY_LAST_COORDS);
+		this.prevX = nbtCoords.getDouble(KEY_LAST_COORDS.concat(".x"));
+		this.prevY = nbtCoords.getDouble(KEY_LAST_COORDS.concat(".y"));
+		this.prevZ = nbtCoords.getDouble(KEY_LAST_COORDS.concat(".z"));
+		this.prevDimID = nbtCoords.getInteger(KEY_LAST_COORDS.concat(".dim"));
 	}
 
 	@Override
@@ -64,10 +56,12 @@ public class TileEntityTentDoor extends TileEntity
 		nbt.setInteger(KEY_STRUCTURE_TYPE, this.structure.ordinal());
 		nbt.setInteger(KEY_OFFSET_X, this.offsetX);
 		nbt.setInteger(KEY_OFFSET_Z, this.offsetZ);
-		nbt.setDouble(KEY_LAST_X, prevX);
-		nbt.setDouble(KEY_LAST_Y, prevY);
-		nbt.setDouble(KEY_LAST_Z, prevZ);
-		nbt.setInteger(KEY_PREV_DIM, this.getPrevDimension());
+		NBTTagCompound nbtCoords = new NBTTagCompound();
+		nbtCoords.setDouble(KEY_LAST_COORDS.concat(".x"), prevX);
+		nbtCoords.setDouble(KEY_LAST_COORDS.concat(".y"), prevY);
+		nbtCoords.setDouble(KEY_LAST_COORDS.concat(".z"), prevZ);
+		nbtCoords.setInteger(KEY_LAST_COORDS.concat(".dim"), this.getPrevDimension());
+		nbt.setTag(KEY_LAST_COORDS, nbtCoords);
 	}
 
 	public void setStructureType(StructureType type)
@@ -146,7 +140,7 @@ public class TileEntityTentDoor extends TileEntity
 			{
 				playerMP.timeUntilPortal = 10;
 			}
-			else if(playerMP.worldObj.provider.dimensionId != Config.DIMENSION_ID)
+			else if(!TentDimension.isTent(playerMP.worldObj))
 			{
 				// remember the player's coordinates from the previous dimension
 				this.setOverworldXYZ(playerMP.posX, playerMP.posY, playerMP.posZ);

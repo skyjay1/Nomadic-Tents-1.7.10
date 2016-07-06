@@ -1,7 +1,7 @@
-package com.yurtmod.dimension;
+package com.yurtmod.structure;
 
-import com.yurtmod.content.BlockTepeeWall;
-import com.yurtmod.content.Content;
+import com.yurtmod.blocks.BlockTepeeWall;
+import com.yurtmod.main.Content;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -12,64 +12,74 @@ public class StructureHelper
 {
 	public static final int MAX_SQ_WIDTH = 16;
 	public static final int FLOOR_Y = 70;
-	public static final int ERR_Y = 10;
 	public static final int STRUCTURE_DIR = 3;
+	public static final int ERROR_TAG = Short.MIN_VALUE;
 	public static interface IYurtBlock {}
 	public static interface ITepeeBlock {}
-	
+	public static interface IBedouinBlock {}
+	public static interface IFrameBlock {}
+
 	/** Handles the structure type to call the correct {@code canSpawnHere} functions. Currently only handles *_SMALL **/
 	public static boolean canSpawnStructureHere(World world, StructureType structure, int doorX, int doorY, int doorZ, int dir)
 	{
 		switch(structure)
 		{
-		case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL:	return StructureTepee.canSpawnSmallTepee(world, doorX, doorY, doorZ, dir);
-		case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL: 	return StructureYurt.canSpawnSmallYurt(world, doorX, doorY, doorZ, dir);
+		case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL:	return StructureTepee.canSpawnSmall(world, doorX, doorY, doorZ, dir);
+		case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL: return StructureYurt.canSpawnSmall(world, doorX, doorY, doorZ, dir);
+		case BEDOUIN_LARGE:	case BEDOUIN_MEDIUM: case BEDOUIN_SMALL: return StructureBedouin.canSpawnSmall(world, doorX, doorY, doorZ, dir);
 		default: return false;
 		}
 	}
-	
+
 	/** Handles the structure type to call the correct {@code isValidStructure} functions. Currently only handles *_SMALL **/
 	public static int isValidStructure(World world, StructureType structure, int doorX, int doorY, int doorZ)
 	{
 		switch(structure)
 		{
-		case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL:	return StructureTepee.isValidSmallTepee(world, doorX, doorY, doorZ);
-		case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL: 	return StructureYurt.isValidSmallYurt(world, doorX, doorY, doorZ);
-		default: return -1;
+		case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL:	return StructureTepee.isValidSmall(world, doorX, doorY, doorZ);
+		case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL: return StructureYurt.isValidSmall(world, doorX, doorY, doorZ);
+		case BEDOUIN_LARGE:	case BEDOUIN_MEDIUM: case BEDOUIN_SMALL: return StructureBedouin.isValidSmall(world, doorX, doorY, doorZ);
 		}
+		return -1;
 	}
-	
+
 	/** Handles the structure type to call the correct {@code generateSmallInOverworld} function **/
 	public static boolean generateSmallStructureOverworld(World world, StructureType structure, int doorX, int doorY, int doorZ, int dir)
 	{
+		Block door = structure.getDoorBlock();
 		switch(structure)
 		{
-		case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL:	return StructureTepee.generateSmallInOverworld(world, doorX, doorY, doorZ, dir, structure.getDoorBlock());
-		case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL: 	return StructureYurt.generateSmallInOverworld(world, doorX, doorY, doorZ, dir, structure.getDoorBlock());
-		default: return false;
+		case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL:	return StructureTepee.generateSmallInOverworld(world, doorX, doorY, doorZ, door, dir);
+		case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL: 	return StructureYurt.generateSmallInOverworld(world, doorX, doorY, doorZ, door, dir);
+		case BEDOUIN_LARGE:	case BEDOUIN_MEDIUM: case BEDOUIN_SMALL: return StructureBedouin.generateSmallInOverworld(world, doorX, doorY, doorZ, door, dir);
 		}
+		return false;
 	}
-	
+
 	/** Handles the structure type to call the correct {@code generateSmallInOverworld} function **/
 	public static boolean deleteSmallStructure(World world, StructureType structure, int doorX, int doorY, int doorZ, int dir)
 	{
 		switch(structure)
 		{
-		case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL:	return StructureTepee.deleteSmall(world, doorX, doorY, doorZ, dir);
-		case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL: 	return StructureYurt.deleteSmall(world, doorX, doorY, doorZ, dir);
-		default: return false;
+		case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL: return StructureTepee.deleteSmall(world, doorX, doorY, doorZ, dir);
+		case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL: return StructureYurt.deleteSmall(world, doorX, doorY, doorZ, dir);
+		case BEDOUIN_LARGE:	case BEDOUIN_MEDIUM: case BEDOUIN_SMALL: return StructureBedouin.deleteSmall(world, doorX, doorY, doorZ, dir);
 		}
+		return false;
 	}
-	
+
+	/** Structure blocks are allowed to replace blocks of these materials */
+	public static boolean isReplaceableMaterial(World worldIn, int[] pos)
+	{
+		return isReplaceableMaterial(worldIn.getBlock(pos[0], pos[1], pos[2]).getMaterial());
+	}
+
 	/** Structure blocks are allowed to replace blocks of these materials */
 	public static boolean isReplaceableMaterial(Material m)
 	{
-		return m == Material.air || m == Material.plants 
-			|| m == Material.lava || m == Material.water 
-			|| m == Material.leaves || m == Material.snow 
-			|| m == Material.vine;
+		return m.isLiquid() || m.isReplaceable() || m == Material.plants || m == Material.leaves;
 	}
-	
+
 	/** Fill the locations given by an array {{x1,z1}} with given block and given metadata **/
 	public static void buildLayer(World worldIn, int[] door, int dirForward, Block block, int metadata, int[][] coordinates, int numLayers)
 	{
@@ -82,25 +92,25 @@ public class StructureHelper
 			}
 		}
 	}
-	
+
 	/** Call buildLayer using x,y,z for door and specific metadata **/
 	public static void buildLayer(World worldIn, int doorX, int doorY, int doorZ, int dirForward, Block block, int meta, int[][] coordinates, int numLayers)
 	{
 		buildLayer(worldIn, new int[] {doorX, doorY, doorZ}, dirForward, block, meta, coordinates, numLayers);
 	}
-	
+
 	/** Call buildLayer using x,y,z for door and no specified metadata **/
 	public static void buildLayer(World worldIn, int doorX, int doorY, int doorZ, int dirForward, Block block, int[][] coordinates, int numLayers)
 	{
 		buildLayer(worldIn, doorX, doorY, doorZ, dirForward, block, 0, coordinates, numLayers);
 	}
-	
+
 	/** Call buildLayer using int[] for door and no specified metadata **/
 	public static void buildLayer(World worldIn, int[] door, int dirForward, Block block, int[][] coordinates, int numLayers)
 	{
 		buildLayer(worldIn, door, dirForward, block, 0, coordinates, numLayers);
 	}
-	
+
 	public static void build2TepeeLayers(World worldIn, int doorX, int layerY, int doorZ, int dirForward, Block wallBlock, int[][] coordinates)
 	{
 		int meta = wallBlock instanceof BlockTepeeWall ? BlockTepeeWall.getMetaForRandomPattern(worldIn.rand) : 0;
@@ -108,7 +118,7 @@ public class StructureHelper
 		meta = 0;
 		buildLayer(worldIn, doorX, layerY + 1, doorZ, dirForward, wallBlock, meta, coordinates, 1);
 	}
-	
+
 	/** Builds a 2-block-deep platform from (cornerX, cornerY - 1, cornerZ) 
 	 * to (cornerX + sqWidth, cornerY, cornerZ + sqWidth), with the top layer
 	 * regular dirt and the bottom layer indestructible dirt
@@ -123,7 +133,7 @@ public class StructureHelper
 				for(int j = 0; j < sqWidth; j++)
 				{
 					if(worldIn.isAirBlock(cornerX + i, cornerY, cornerZ + j)) worldIn.setBlock(cornerX + i, cornerY, cornerZ + j, Blocks.dirt, 0, 2);
-					worldIn.setBlock(cornerX + i, cornerY - 1, cornerZ + j, Content.indestructibleDirt, 0, 2);
+					worldIn.setBlock(cornerX + i, cornerY - 1, cornerZ + j, Content.superDirt, 0, 2);
 				}
 			}
 			return true;
@@ -135,15 +145,26 @@ public class StructureHelper
 	{
 		for(int[] coord : layer0)
 		{
-			worldIn.setBlock(doorX + coord[0], doorY - 1, doorZ + coord[1], Content.indestructibleDirt);
+			worldIn.setBlock(doorX + coord[0], doorY - 1, doorZ + coord[1], Content.superDirt);
 		}
 	}
 	
-	/** Sets the passed coordinates to {@link fuel} and places fire above it **/
 	public static void buildFire(World world, Block fuel, int fuelX, int fuelY, int fuelZ)
 	{
+		buildFire(world, fuel, Blocks.fire, fuelX, fuelY, fuelZ);
+	}
+	
+	/** Sets the passed coordinates to {@link fuel} and places fire above it **/
+	public static void buildFire(World world, Block fuel, Block fire, int fuelX, int fuelY, int fuelZ)
+	{
 		world.setBlock(fuelX, fuelY, fuelZ, fuel);
-		world.setBlock(fuelX, fuelY + 1, fuelZ, Blocks.fire);
+		world.setBlock(fuelX, fuelY + 1, fuelZ, fire);
+	}
+	
+	public static void buildDoor(World worldIn, int doorX, int doorY, int doorZ, Block doorBlock)
+	{
+		worldIn.setBlock(doorX, doorY, doorZ, doorBlock, 0, 3);
+		worldIn.setBlock(doorX, doorY + 1, doorZ, doorBlock, 1, 3);
 	}
 	
 	/** Calculates what offset x, z to give a door or item **/
@@ -272,4 +293,68 @@ public class StructureHelper
 	public static final int[][] tepeeLayer5Large = getShiftedArray(tepeeLayer3Med, 1, 0);
 	public static final int[] tepeeBarrierLarge = new int[] {4,0};
 	
+	/********************* SMALL BEDOUIN *********************/
+	public static final int[][] bedWallsSmall = yurtWallsSmall;
+	public static final int[][] bedRoof1Small = new int[][]
+	{
+		{0,0},{1,1},{2,1},{3,1},{4,0},{1,-1},{2,-1},{3,-1}
+	};
+	public static final int[][] bedRoof2Small = new int[][]
+	{
+		{1,0},{2,0},{3,0}
+	};
+	/********************* MEDIUM BEDOUIN *********************/
+	public static final int[][] bedWallsMed = new int[][]
+	{
+		{0,-2},{0,-1},{0,0},{0,1},{0,2},
+		{1,3},{2,3},{3,3},{4,3},{5,3},
+		{6,-2},{6,-1},{6,0},{6,1},{6,2},
+		{1,-3},{2,-3},{3,-3},{4,-3},{5,-3}
+		
+	};
+	public static final int[][] bedRoof1Med = new int[][]
+	{
+		{0,-1},{0,0},{0,1},{1,2},{2,2},{3,2},{4,2},{5,2},
+		{6,-1},{6,0},{6,1},{1,-2},{2,-2},{3,-2},{4,-2},{5,-2}
+	};
+	public static final int[][] bedRoof2Med = new int[][]
+	{
+		{0,0},{1,1},{2,1},{3,1},{4,1},{5,1},
+		{6,0},{1,-1},{2,-1},{3,-1},{4,-1},{5,-1}
+	};
+	public static final int[][] bedRoof3Med = new int[][]
+	{
+		{1,0},{2,0},{3,0},{4,0},{5,0}
+	};
+	/********************* LARGE BEDOUIN *********************/
+	public static final int[][] bedWallsLarge = new int[][]
+	{
+		{0,-3},{0,-2},{0,-1},{0,0},{0,1},{0,2},{0,3},
+		{1,4},{2,4},{3,4},{4,4},{5,4},{6,4},{7,4},
+		{8,-3},{8,-2},{8,-1},{8,0},{8,1},{8,2},{8,3},
+		{1,-4},{2,-4},{3,-4},{4,-4},{5,-4},{6,-4},{7,-4}
+	};
+	public static final int[][] bedRoof1Large = new int[][]
+	{
+		{0,-2},{0,-1},{0,0},{0,1},{0,2},
+		{1,3},{2,3},{3,3},{4,3},{5,3},{6,3},{7,3},
+		{8,-2},{8,-1},{8,0},{8,1},{8,2},
+		{1,-3},{2,-3},{3,-3},{4,-3},{5,-3},{6,-3},{7,-3}
+	};
+	public static final int[][] bedRoof2Large = new int[][]
+	{
+		{0,-1},{0,0},{0,1},{8,-1},{8,0},{8,1},
+		{1,2},{2,2},{3,2},{4,2},{5,2},{6,2},{7,2},
+		{1,-2},{2,-2},{3,-2},{4,-2},{5,-2},{6,-2},{7,-2}
+	};
+	public static final int[][] bedRoof3Large = new int[][]
+	{
+		{0,0},{8,0},
+		{1,1},{2,1},{3,1},{4,1},{5,1},{6,1},{7,1},
+		{1,-1},{2,-1},{3,-1},{4,-1},{5,-1},{6,-1},{7,-1}
+	};
+	public static final int[][] bedRoof4Large = new int[][]
+	{
+		{1,0},{2,0},{3,0},{4,0},{5,0},{6,0},{7,0}
+	};
 }

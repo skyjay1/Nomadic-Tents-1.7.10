@@ -1,6 +1,7 @@
 package com.yurtmod.main;
 
-import com.yurtmod.content.Content;
+import java.io.File;
+
 import com.yurtmod.dimension.TentDimension;
 import com.yurtmod.proxies.CommonProxy;
 
@@ -11,6 +12,7 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 
 @Mod(modid = NomadicTents.MODID, name = NomadicTents.NAME, version = NomadicTents.VERSION, acceptedMinecraftVersions = NomadicTents.MCVERSION)
@@ -18,44 +20,39 @@ public class NomadicTents
 {
 	public static final String MODID = "yurtmod";
 	public static final String NAME = "Nomadic Tents Mod";
-	public static final String VERSION = "1.10";
+	public static final String VERSION = "1.11";
 	public static final String MCVERSION = "1.7.10";
-	public static final String CLIENT = "com." + MODID + ".proxies.ClientProxy";
-	public static final String SERVER = "com." + MODID + ".proxies.CommonProxy";
-	
-	@SidedProxy(clientSide = CLIENT, serverSide = SERVER)
+
+	@SidedProxy(clientSide = "com." + MODID + ".proxies.ClientProxy", serverSide = "com." + MODID + ".proxies.CommonProxy")
 	public static CommonProxy proxy;
-	
+
 	public static CreativeTabs tab;
-	
+
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event)
 	{
-		tab = new NomadicTents.YurtTab("yurtMain");
-		Config.mainRegistry(new Configuration(event.getSuggestedConfigurationFile()));
+		tab = new CreativeTabs("yurtMain")
+		{
+			@Override
+			public Item getTabIconItem() 
+			{
+				return Content.itemTent;
+			}
+		};
+		String path = event.getSuggestedConfigurationFile().getAbsolutePath().replaceFirst(MODID + ".cfg", "NomadicTents.cfg");
+		Config.mainRegistry(new Configuration(new File(path)));
 		Content.mainRegistry();
 		Crafting.mainRegistry();
 		TentDimension.mainRegistry();
 	}
-	
+
 	@EventHandler
-    public void init(FMLInitializationEvent event)
-    {        
-        proxy.registerRenders();
-    }
-	
-	public static class YurtTab extends CreativeTabs
-	{
-		public YurtTab(String label)
+	public void init(FMLInitializationEvent event)
+	{    
+		if(Config.SLEEP_TO_DAY_IN_TENT_DIM)
 		{
-			super(label);
+			MinecraftForge.EVENT_BUS.register(new SleepHandler());
 		}
-		
-		@Override
-		public Item getTabIconItem() 
-		{
-			return Content.itemTent;
-		}
-		
+		proxy.registerRenders();
 	}
 }

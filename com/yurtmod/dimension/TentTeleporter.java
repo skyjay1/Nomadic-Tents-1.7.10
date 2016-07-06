@@ -1,15 +1,14 @@
 package com.yurtmod.dimension;
 
-import com.yurtmod.content.Content;
-import com.yurtmod.content.TileEntityTentDoor;
-import com.yurtmod.main.Config;
+import com.yurtmod.structure.DimensionStructureBase;
+import com.yurtmod.structure.StructureBedouin;
+import com.yurtmod.structure.StructureHelper;
+import com.yurtmod.structure.StructureTepee;
+import com.yurtmod.structure.StructureType;
+import com.yurtmod.structure.StructureYurt;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.StatCollector;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.WorldServer;
 
@@ -48,7 +47,7 @@ public class TentTeleporter extends Teleporter
 			float yaw;
 			entity.motionX = entity.motionY = entity.motionZ = 0.0D;
 
-			if(worldServer.provider.dimensionId == Config.DIMENSION_ID)
+			if(TentDimension.isTent(this.worldServer))
 			{				
 				entityX = this.yurtCornerX + 1.5D;
 				entityY = this.yurtCornerY + 0.01D;
@@ -56,17 +55,15 @@ public class TentTeleporter extends Teleporter
 				yaw = -90F;
 				
 				// generate the structure - each tent should check if it already exists before generating
-				switch(this.structure)
+				DimensionStructureBase gen = StructureType.getGenFromStructureType(this.structure);				
+				if(gen != null)
 				{
-				case YURT_LARGE: case YURT_MEDIUM: case YURT_SMALL:
-					new StructureYurt(this.structure).generateInTentDimension(prevDimID, worldServer, yurtCornerX, yurtCornerZ, prevX, prevY, prevZ);
-					break;
-				case TEPEE_LARGE: case TEPEE_MEDIUM: case TEPEE_SMALL:
-					new StructureTepee(this.structure).generateInTentDimension(prevDimID, worldServer, yurtCornerX, yurtCornerZ, prevX, prevY, prevZ);
-					break;
-				default:
-					StructureHelper.generatePlatform(worldServer, yurtCornerX, yurtCornerY, yurtCornerZ, 16);
-					break;
+					gen.generateInTentDimension(prevDimID, worldServer, yurtCornerX, yurtCornerZ, prevX, prevY, prevZ);
+				}
+				else
+				{
+					StructureHelper.generatePlatform(worldServer, yurtCornerX, yurtCornerY, yurtCornerZ, 8);
+					System.out.println("Error: unhandled structure type resulted in empty platform");
 				}
 			}
 			else

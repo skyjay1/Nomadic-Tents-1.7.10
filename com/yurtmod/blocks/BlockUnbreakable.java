@@ -1,4 +1,4 @@
-package com.yurtmod.content;
+package com.yurtmod.blocks;
 
 import com.yurtmod.main.NomadicTents;
 

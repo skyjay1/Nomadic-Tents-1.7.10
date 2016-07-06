@@ -40,13 +40,14 @@ public class WorldProviderTent extends WorldProvider
 	@Override
 	public boolean canRespawnHere()
 	{
-		return true;
+		// returning false from here makes beds explode when you try to sleep
+		return Config.ALLOW_RESPAWN_TENT_DIM || Config.ALLOW_SLEEP_TENT_DIM;
 	}
 	
 	@Override
 	public int getRespawnDimension(EntityPlayerMP player)
 	{
-		return Config.DIMENSION_ID;
+		return canRespawnHere() ? Config.DIMENSION_ID : 0;
 	}
 	
 	@Override

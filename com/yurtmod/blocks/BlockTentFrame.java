@@ -1,6 +1,8 @@
-package com.yurtmod.content;
+package com.yurtmod.blocks;
 
+import com.yurtmod.main.Content;
 import com.yurtmod.main.NomadicTents;
+import com.yurtmod.structure.StructureHelper.IFrameBlock;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -14,18 +16,21 @@ import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
-public class BlockTentFrame extends BlockUnbreakable
+public class BlockTentFrame extends BlockUnbreakable implements IFrameBlock
 {
 	private final int CONSTRUCT_DAMAGE = 1;		// 1 in x hits damages the tool
-	private final Block TO_BECOME;
+	private final int MAX_META = 7;
+	private final BlockToBecome TO_BECOME;
+	@SideOnly(Side.CLIENT)
 	private IIcon[] frameIcons;
 
-	protected BlockTentFrame(Block replace)
+	public BlockTentFrame(BlockToBecome replace)
 	{
 		super(Material.wood);
 		this.TO_BECOME = replace;
 		this.setBlockTextureName(NomadicTents.MODID + ":yurt_frame");
 		this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
+		this.setStepSound(soundTypeWood);
 	}
 
 	@Override
@@ -46,18 +51,15 @@ public class BlockTentFrame extends BlockUnbreakable
 			}
 			else if(player.getHeldItem().getItem() == Content.itemMallet)
 			{
-				// debug:
-				//System.out.print("Activated by Tent Tool\n");
 				int meta = worldIn.getBlockMetadata(x, y, z);
-				if(meta < frameIcons.length)
+				int nextMeta = meta + getEffectiveness(worldIn, x, y, z, player.getHeldItem(), player);
+				if(nextMeta >= MAX_META)
 				{
-					worldIn.setBlockMetadataWithNotify(x, y, z, meta + 1, 3);
-					// debug:
-					//System.out.print("Built up a frame block by 1 unit. My metadata is now " + worldIn.getBlockMetadata(x, y, z) + "\n");
-					if(meta + 1 == frameIcons.length)
-					{
-						this.becomeReal(worldIn, x, y, z, player.getHeldItem(), player);
-					}
+					this.becomeReal(worldIn, x, y, z, player.getHeldItem(), player);
+				}
+				else
+				{
+					worldIn.setBlockMetadataWithNotify(x, y, z, nextMeta, 2);
 				}
 				return true;
 			}
@@ -93,7 +95,7 @@ public class BlockTentFrame extends BlockUnbreakable
 	@SideOnly(Side.CLIENT)
 	public IIcon getIcon(int side, int meta)
 	{
-		return this.frameIcons[meta % frameIcons.length];
+		return this.frameIcons[Math.floorDiv(meta, 2) % frameIcons.length];
 	}
 
 	@Override
@@ -124,17 +126,23 @@ public class BlockTentFrame extends BlockUnbreakable
 	{
 		return 6;
 	}
+	
+	/** @return the number by which to increment PROGRESS **/
+	public int getEffectiveness(World worldIn, int x, int y, int z, ItemStack mallet, EntityPlayer player)
+	{
+		return 2;
+	}
 
 	public boolean becomeReal(World worldIn, int x, int y, int z, ItemStack mallet, EntityPlayer player)
 	{
 		mallet.damageItem(CONSTRUCT_DAMAGE, player);
-		return !worldIn.isRemote && worldIn.setBlock(x, y, z, this.TO_BECOME);
+		return worldIn.setBlock(x, y, z, this.TO_BECOME.getBlock());
 	}
 
 	public boolean onSuperMalletUsed(World worldIn, int myX, int myY, int myZ, ItemStack mallet, EntityPlayer player)
 	{
-		int metaToSet = frameIcons.length;
-		worldIn.setBlockMetadataWithNotify(myX, myY, myZ, metaToSet, 3);
+		int metaToSet = MAX_META;
+		worldIn.setBlockMetadataWithNotify(myX, myY, myZ, metaToSet, 2);
 		this.becomeReal(worldIn, myX,myY,myZ,mallet,player);
 		for(int i = -1; i < 2; i++)
 		{
@@ -146,7 +154,7 @@ public class BlockTentFrame extends BlockUnbreakable
 					int y = myY + j;
 					int z = myZ + k;
 					Block current = worldIn.getBlock(x,y,z);
-					if(current instanceof BlockTentFrame && worldIn.getBlockMetadata(x,y,z) < metaToSet)
+					if(current instanceof BlockTentFrame && worldIn.getBlockMetadata(x,y,z) <= metaToSet)
 					{
 						((BlockTentFrame) current).onSuperMalletUsed(worldIn,x,y,z,mallet,player);
 					}
@@ -154,5 +162,29 @@ public class BlockTentFrame extends BlockUnbreakable
 			}
 		}
 		return true;
+	}
+	
+	public static enum BlockToBecome
+	{
+		YURT_WALL_INNER,
+		YURT_WALL_OUTER,
+		YURT_ROOF,
+		TEPEE_WALL,
+		BEDOUIN_WALL,
+		BEDOUIN_ROOF;
+
+		public Block getBlock()
+		{
+			switch(this)
+			{
+			case YURT_WALL_INNER: 	return Content.yurtInnerWall;
+			case YURT_WALL_OUTER: 	return Content.yurtOuterWall;
+			case YURT_ROOF: 		return Content.yurtRoof;
+			case TEPEE_WALL: 		return Content.tepeeWall;
+			case BEDOUIN_WALL:		return Content.bedWall;
+			case BEDOUIN_ROOF:		return Content.bedRoof;
+			}
+			return null;
+		}
 	}
 }

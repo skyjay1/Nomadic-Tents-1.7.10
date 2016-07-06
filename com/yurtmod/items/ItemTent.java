@@ -1,12 +1,14 @@
-package com.yurtmod.content;
+package com.yurtmod.items;
 
 import java.util.List;
 
-import com.yurtmod.dimension.StructureHelper;
-import com.yurtmod.dimension.StructureType;
+import com.yurtmod.blocks.TileEntityTentDoor;
+import com.yurtmod.dimension.TentDimension;
 import com.yurtmod.main.Config;
 import com.yurtmod.main.NomadicTents;
 import com.yurtmod.main.TentSaveData;
+import com.yurtmod.structure.StructureHelper;
+import com.yurtmod.structure.StructureType;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -39,6 +41,7 @@ public class ItemTent extends Item
 	{
 		this.setMaxStackSize(1);
 		this.setHasSubtypes(true);
+		this.setCreativeTab(NomadicTents.tab);
 	}
 
 	@Override
@@ -51,26 +54,26 @@ public class ItemTent extends Item
 			adjustSaveData(itemStack, world, player);
 		}
 	}
-	
+
 	/**
-     * Called each tick as long the item is on a player inventory. Uses by maps to check if is on a player hand and
-     * update it's contents.
-     */
-    public void onUpdate(ItemStack stack, World world, Entity entity, int i0, boolean b0) 
-    {
-    	if(stack.getTagCompound() == null) 
-    	{
-    		stack.setTagCompound(new NBTTagCompound());
-    	}
-    	if(!stack.getTagCompound().hasKey(OFFSET_X))
-    	{
-    		stack.getTagCompound().setInteger(OFFSET_X, Short.MIN_VALUE);
-    	}
-    	if(!stack.getTagCompound().hasKey(OFFSET_Z))
-    	{
-    		stack.getTagCompound().setInteger(OFFSET_Z, Short.MIN_VALUE);
-    	}
-    }
+	 * Called each tick as long the item is on a player inventory. Uses by maps to check if is on a player hand and
+	 * update it's contents.
+	 */
+	public void onUpdate(ItemStack stack, World world, Entity entity, int i0, boolean b0) 
+	{
+		if(stack.getTagCompound() == null) 
+		{
+			stack.setTagCompound(new NBTTagCompound());
+		}
+		if(!stack.getTagCompound().hasKey(OFFSET_X))
+		{
+			stack.getTagCompound().setInteger(OFFSET_X, StructureHelper.ERROR_TAG);
+		}
+		if(!stack.getTagCompound().hasKey(OFFSET_Z))
+		{
+			stack.getTagCompound().setInteger(OFFSET_Z, StructureHelper.ERROR_TAG);
+		}
+	}
 
 	@Override
 	public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side, float hitX, float hitY, float hitZ)
@@ -83,45 +86,45 @@ public class ItemTent extends Item
 	{
 		return true;
 	}
-	
+
 	@Override
 	public String getUnlocalizedName(ItemStack stack) 
 	{
-	    return "item." + this.getStructureType(stack.getItemDamage()).toString().toLowerCase();
+		return "item." + StructureType.getName(stack);
 	}
 
 	@Override
 	public void getSubItems(Item itemIn, CreativeTabs tab, List subItems) 
 	{
-		for(int i = 0, len = StructureType.values().length; i < len; i++)
+		for(StructureType type : StructureType.values())
 		{
-			subItems.add(new ItemStack(itemIn, 1, i));
+			subItems.add(type.getDropStack(StructureHelper.ERROR_TAG, StructureHelper.ERROR_TAG));
 		}
 	}
-	
+
 	/**
-     * Gets an icon index based on an item's damage value
-     */
-    @SideOnly(Side.CLIENT)
-    public IIcon getIconFromDamage(int meta)
-    {
-        return this.icons[meta % this.icons.length];
-    }
-    
-    @SideOnly(Side.CLIENT)
-    public void registerIcons(IIconRegister reg)
-    {
-        this.icons = new IIcon[StructureType.values().length];
-        for(int i = 0, len = icons.length; i < len; i++)
-        {
-        	this.icons[i] = reg.registerIcon(NomadicTents.MODID + ":" + this.getStructureType(i).toString().toLowerCase());
-        }
-    }
+	 * Gets an icon index based on an item's damage value
+	 */
+	@SideOnly(Side.CLIENT)
+	public IIcon getIconFromDamage(int meta)
+	{
+		return this.icons[meta % this.icons.length];
+	}
+
+	@SideOnly(Side.CLIENT)
+	public void registerIcons(IIconRegister reg)
+	{
+		this.icons = new IIcon[StructureType.values().length];
+		for(int i = 0, len = icons.length; i < len; i++)
+		{
+			this.icons[i] = reg.registerIcon(NomadicTents.MODID + ":" + StructureType.getName(i));
+		}
+	}
 
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World worldIn, EntityPlayer player)
 	{
-		if(worldIn.provider.dimensionId != Config.DIMENSION_ID && !worldIn.isRemote)
+		if(!TentDimension.isTent(worldIn))
 		{
 			MovingObjectPosition movingobjectposition = this.getMovingObjectPositionFromPlayer(worldIn, player, true);
 
@@ -131,8 +134,14 @@ public class ItemTent extends Item
 			}
 			else if(hasInvalidCoords(stack))
 			{
-				player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + StatCollector.translateToLocal("chat.no_structure_ln1")));
-				player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + StatCollector.translateToLocal("chat.no_structure_ln2")));
+				if(worldIn.isRemote)
+				{
+					ChatComponentText lines =  new ChatComponentText(EnumChatFormatting.WHITE + "----------------------------");
+					player.addChatMessage(lines);
+					player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + StatCollector.translateToLocal("chat.no_structure_ln1")));
+					player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + StatCollector.translateToLocal("chat.no_structure_ln2")));
+					player.addChatMessage(lines);
+				}
 				return stack;
 			}
 			else if(movingobjectposition.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK)
@@ -160,16 +169,16 @@ public class ItemTent extends Item
 				{
 					// debug:
 					//System.out.println("Trying to generate a Yurt...");
-					if(StructureHelper.canSpawnStructureHere(worldIn, this.getStructureType(meta), i,j,k, d))
+					if(StructureHelper.canSpawnStructureHere(worldIn, StructureType.get(meta), i,j,k, d))
 					{
-						Block door = this.getStructureType(meta).getDoorBlock();
-						if(StructureHelper.generateSmallStructureOverworld(worldIn, this.getStructureType(meta), i,j,k, d))
+						Block door = StructureType.get(meta).getDoorBlock();
+						if(StructureHelper.generateSmallStructureOverworld(worldIn, StructureType.get(meta), i,j,k, d))
 						{
 							// lower door:
 							TileEntity te = worldIn.getTileEntity(i,j,k);
 							if(te != null && te instanceof TileEntityTentDoor)
 							{
-								this.getStructureType(meta).applyToTileEntity(player, stack, (TileEntityTentDoor)te);
+								StructureType.get(meta).applyToTileEntity(player, stack, (TileEntityTentDoor)te);
 							}
 							else System.out.println("Error! Failed to retrieve TileEntityTentDoor at " + i + ", " + j + ", " + k);
 							// remove tent from inventory
@@ -186,27 +195,22 @@ public class ItemTent extends Item
 	@SideOnly(Side.CLIENT)
 	public void addInformation(ItemStack stack, EntityPlayer player, List par3List, boolean par4)
 	{
-		par3List.add(this.getTooltipColor(stack.getItemDamage()) + StatCollector.translateToLocal("tooltip.extra_dimensional_space"));
+		par3List.add(StructureType.get(stack.getItemDamage()).getTooltipColor() + StatCollector.translateToLocal("tooltip.extra_dimensional_space"));
 	}
-	
+
 	public boolean hasInvalidCoords(ItemStack stack)
 	{
 		if(stack.getTagCompound() != null) 
 		{
-			return stack.getTagCompound().getInteger(OFFSET_X) == Short.MIN_VALUE && stack.getTagCompound().getInteger(OFFSET_Z) == Short.MIN_VALUE;
+			return stack.getTagCompound().getInteger(OFFSET_X) == StructureHelper.ERROR_TAG && stack.getTagCompound().getInteger(OFFSET_Z) == StructureHelper.ERROR_TAG;
 		}
 		return true;
-	}
-
-	public StructureType getStructureType(int meta)
-	{
-		return StructureType.values()[meta % StructureType.values().length];
 	}
 
 	public void adjustSaveData(ItemStack stack, World world, EntityPlayer player)
 	{
 		TentSaveData data = TentSaveData.forWorld(world);
-		StructureType struct = getStructureType(stack.getItemDamage());
+		StructureType struct = StructureType.get(stack.getItemDamage());
 		stack.getTagCompound().setInteger(OFFSET_Z, struct.getTagOffsetZ());
 		switch(struct)
 		{
@@ -240,17 +244,6 @@ public class ItemTent extends Item
 			break;
 		default:
 			break;
-		}
-	}
-
-	public EnumChatFormatting getTooltipColor(int meta)
-	{
-		switch(meta)
-		{
-		case 0: case 3: return EnumChatFormatting.RED;
-		case 1: case 4: return EnumChatFormatting.BLUE;
-		case 2: case 5: return EnumChatFormatting.GREEN;
-		default: 		return EnumChatFormatting.GRAY;
 		}
 	}
 }
