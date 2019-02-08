@@ -1,8 +1,8 @@
 package com.yurtmod.blocks;
 
+import com.yurtmod.blocks.Categories.IYurtBlock;
 import com.yurtmod.main.Content;
 import com.yurtmod.main.NomadicTents;
-import com.yurtmod.structure.StructureHelper.IYurtBlock;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

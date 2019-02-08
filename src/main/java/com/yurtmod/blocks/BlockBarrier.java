@@ -2,11 +2,10 @@ package com.yurtmod.blocks;
 
 import java.util.List;
 
+import com.yurtmod.blocks.Categories.IBedouinBlock;
+import com.yurtmod.blocks.Categories.ITepeeBlock;
+import com.yurtmod.blocks.Categories.IYurtBlock;
 import com.yurtmod.main.NomadicTents;
-import com.yurtmod.structure.StructureHelper.IBedouinBlock;
-import com.yurtmod.structure.StructureHelper.IFrameBlock;
-import com.yurtmod.structure.StructureHelper.ITepeeBlock;
-import com.yurtmod.structure.StructureHelper.IYurtBlock;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;

@@ -1,7 +1,7 @@
 package com.yurtmod.blocks;
 
+import com.yurtmod.blocks.Categories.IBedouinBlock;
 import com.yurtmod.main.NomadicTents;
-import com.yurtmod.structure.StructureHelper.IBedouinBlock;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;

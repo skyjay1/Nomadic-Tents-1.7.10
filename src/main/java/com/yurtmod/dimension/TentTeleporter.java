@@ -12,16 +12,15 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.WorldServer;
 
-public class TentTeleporter extends Teleporter
-{	
+public class TentTeleporter extends Teleporter {
 	public final StructureType structure;
 	public final int yurtCornerX, yurtCornerY, yurtCornerZ;
 	public final double prevX, prevY, prevZ;
 	public final int prevDimID;
 	public final WorldServer worldServer;
 
-	public TentTeleporter(int dimensionFrom, WorldServer worldTo, int cornerX, int cornerY, int cornerZ, double lastX, double lastY, double lastZ, StructureType structureType) 
-	{
+	public TentTeleporter(int dimensionFrom, WorldServer worldTo, int cornerX, int cornerY, int cornerZ, double lastX,
+			double lastY, double lastZ, StructureType structureType) {
 		super(worldTo);
 		this.prevDimID = dimensionFrom;
 		this.worldServer = worldTo;
@@ -35,39 +34,32 @@ public class TentTeleporter extends Teleporter
 	}
 
 	@Override
-	public void placeInPortal(Entity entity, double x, double y, double z, float f)
-	{
-		if(entity instanceof EntityPlayer)
-		{
-			EntityPlayer player = (EntityPlayer)entity;
-			
+	public void placeInPortal(Entity entity, double x, double y, double z, float f) {
+		if (entity instanceof EntityPlayer) {
+			EntityPlayer player = (EntityPlayer) entity;
+
 			double entityX;
 			double entityY;
 			double entityZ;
 			float yaw;
 			entity.motionX = entity.motionY = entity.motionZ = 0.0D;
 
-			if(TentDimension.isTent(this.worldServer))
-			{				
+			if (TentDimension.isTent(this.worldServer)) {
 				entityX = this.yurtCornerX + 1.5D;
 				entityY = this.yurtCornerY + 0.01D;
 				entityZ = this.yurtCornerZ + this.structure.getDoorPosition() + 0.5D;
 				yaw = -90F;
-				
-				// generate the structure - each tent should check if it already exists before generating
-				DimensionStructureBase gen = StructureType.getGenFromStructureType(this.structure);				
-				if(gen != null)
-				{
+
+				// generate the structure - each tent should check if it already exists before
+				// generating
+				DimensionStructureBase gen = StructureType.getGenFromStructureType(this.structure);
+				if (gen != null) {
 					gen.generateInTentDimension(prevDimID, worldServer, yurtCornerX, yurtCornerZ, prevX, prevY, prevZ);
-				}
-				else
-				{
+				} else {
 					StructureHelper.generatePlatform(worldServer, yurtCornerX, yurtCornerY, yurtCornerZ, 8);
 					System.out.println("Error: unhandled structure type resulted in empty platform");
 				}
-			}
-			else
-			{	
+			} else {
 				entityX = this.prevX;
 				entityY = this.prevY;
 				entityZ = this.prevZ;
@@ -78,13 +70,11 @@ public class TentTeleporter extends Teleporter
 	}
 
 	@Override
-	public boolean placeInExistingPortal(Entity entity, double x, double y, double z, float f)
-	{
+	public boolean placeInExistingPortal(Entity entity, double x, double y, double z, float f) {
 		return true;
 	}
-	
-	public String toString()
-	{
+
+	public String toString() {
 		String out = "\n[TentTeleporter]\n";
 		out += "structure=" + this.structure + "\n";
 		out += "yurtCornerX=" + this.yurtCornerX + "\n";

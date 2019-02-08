@@ -1,272 +1,191 @@
 package com.yurtmod.structure;
 
-import com.yurtmod.blocks.TileEntityTentDoor;
+import java.util.function.Predicate;
+
+import com.yurtmod.blocks.Categories.IYurtBlock;
+import com.yurtmod.dimension.TentDimension;
 import com.yurtmod.main.Content;
-import com.yurtmod.structure.StructureHelper.IYurtBlock;
+import com.yurtmod.structure.StructureType.Size;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
-public class StructureYurt extends DimensionStructureBase
-{
-	public static final int WALL_HEIGHT = 3;
-	
-	private static final int BARRIER_Y_SMALL = 4;
-	private static final int BARRIER_Y_MED = 5;
-	private static final int BARRIER_Y_LARGE = 6;
-	
-	public StructureYurt(StructureType type)
-	{
+public class StructureYurt extends StructureBase {
+	private static final Blueprints BP_SMALL = makeBlueprints(StructureType.Size.SMALL, new Blueprints());
+	private static final Blueprints BP_MED = makeBlueprints(StructureType.Size.MEDIUM, new Blueprints());
+	private static final Blueprints BP_LARGE = makeBlueprints(StructureType.Size.LARGE, new Blueprints());
+
+	public StructureYurt(StructureType type) {
 		super(type);
 	}
 
-	/**
-	 * Allots a space for a sized yurt in the Yurt Dimension.
-	 * @param prevDimension the dimension id the player is leaving
-	 * @param worldIn the world (in Yurt Dimension) to build in
-	 * @param cornerX calculated by TileEntityYurtDoor
-	 * @param cornerZ calculated by TileEntityYurtDoor
-	 * @param overworldX the players x-pos before teleporting to Yurt
-	 * @param overworldY the players y-pos before teleporting to Yurt
-	 * @param overworldZ the players z-pos before teleporting to Yurt
-	 **/
-	public boolean generateInTentDimension(int prevDimension, World worldIn, int cornerX, int cornerZ, double overworldX, double overworldY, double overworldZ)
-	{
-		// check if the rest of the yurt has already been generated
-		int doorZ = cornerZ;
-		boolean ret = true;
-		if(StructureHelper.generatePlatform(worldIn, cornerX, StructureHelper.FLOOR_Y, cornerZ, this.structure.getSqWidth()))
-		{
-			// make the yurt
-			switch(this.structure)
-			{
-			case YURT_SMALL:
-				ret = this.generateSmallInDimension(worldIn, cornerX, StructureHelper.FLOOR_Y + 1, cornerZ + this.structure.getDoorPosition());
-				break;
-			case YURT_MEDIUM:
-				ret = this.generateMedInDimension(worldIn, cornerX, StructureHelper.FLOOR_Y + 1, cornerZ + this.structure.getDoorPosition());
-				break;
-			case YURT_LARGE:
-				ret = this.generateLargeInDimension(worldIn, cornerX, StructureHelper.FLOOR_Y + 1, cornerZ + this.structure.getDoorPosition());
-				break;
-			default: break;
-			}			
-		}
-
-		// set tile entity door information
-		if(ret)
-		{
-			doorZ = cornerZ + this.structure.getDoorPosition();
-			TileEntity te = worldIn.getTileEntity(cornerX, StructureHelper.FLOOR_Y + 1, doorZ);
-			if(te != null && te instanceof TileEntityTentDoor)
-			{
-				TileEntityTentDoor teyd = (TileEntityTentDoor)te;
-				int[] offsets = StructureHelper.getOffsetsFromXZ(cornerX, cornerZ);
-				teyd.setStructureType(this.structure);
-				teyd.setOffsetX(offsets[0]);
-				teyd.setOffsetZ(offsets[1]);
-				teyd.setOverworldXYZ(overworldX, overworldY, overworldZ);
-				teyd.setPrevDimension(prevDimension);
-				// debug:
-				//System.out.println("OverworldXYZ = " + overworldX + "," + overworldY + "," + overworldZ);
-				return ret;
+	@Override
+	public boolean generate(World worldIn, BlockPosBeta doorBase, EnumFacing dirForward, Size size, Block doorBlock,
+			Block wallBlock, Block roofBlock) {
+		boolean tentDim = TentDimension.isTent(worldIn);
+		switch (size) {
+		case LARGE:
+			// build all relevant layers
+			buildLayer(worldIn, doorBase, dirForward, wallBlock, BP_LARGE.getWallCoords());
+			buildLayer(worldIn, doorBase, dirForward, roofBlock, BP_LARGE.getRoofCoords());
+			// make door
+			buildDoor(worldIn, doorBase, doorBlock, dirForward);
+			// add dimension-only features
+			if (tentDim) {
+				BlockPosBeta pos = getPosFromDoor(doorBase, 4, -1, 0, dirForward);
+				if ((pos.getBlock(worldIn) == Blocks.dirt || pos.isAirBlock(worldIn))
+						&& pos.up(1).isAirBlock(worldIn)) {
+					pos.setBlock(worldIn, Blocks.netherrack, 0, 2);
+					pos.up(1).setBlock(worldIn, Blocks.fire, 0, 3);
+				}
+				buildLayer(worldIn, doorBase, dirForward, Content.barrier, BP_LARGE.getBarrierCoords());
 			}
-			else System.out.println("Error! Failed to retrive TileEntityYurtDoor at " + cornerX + ", " + (StructureHelper.FLOOR_Y + 1) + ", " + doorZ);
+			return true;
+		case MEDIUM:
+			// build all relevant layers
+			buildLayer(worldIn, doorBase, dirForward, wallBlock, BP_MED.getWallCoords());
+			buildLayer(worldIn, doorBase, dirForward, roofBlock, BP_MED.getRoofCoords());
+			// make door
+			buildDoor(worldIn, doorBase, doorBlock, dirForward);
+			// add dimension-only features
+			if (tentDim) {
+				BlockPosBeta pos = getPosFromDoor(doorBase, 3, -1, 0, dirForward);
+				if ((pos.getBlock(worldIn) == Blocks.dirt || pos.isAirBlock(worldIn))
+						&& pos.up(1).isAirBlock(worldIn)) {
+					pos.setBlock(worldIn, Blocks.netherrack, 0, 2);
+					pos.up(1).setBlock(worldIn, Blocks.fire, 0, 3);
+				}
+				buildLayer(worldIn, doorBase, dirForward, Content.barrier, BP_MED.getBarrierCoords());
+			}
+			return true;
+		case SMALL:
+			// build all relevant layers
+			buildLayer(worldIn, doorBase, dirForward, wallBlock, BP_SMALL.getWallCoords());
+			buildLayer(worldIn, doorBase, dirForward, roofBlock, BP_SMALL.getRoofCoords());
+			// make door
+			buildDoor(worldIn, doorBase, doorBlock, dirForward);
+			// add dimension-only features
+			if (tentDim) {
+				buildLayer(worldIn, doorBase, dirForward, Content.barrier, BP_SMALL.getBarrierCoords());
+			}
+			return true;
 		}
 		return false;
 	}
 
-	/** (Helper function) Warning: does not check canSpawnSmallYurt before generating */
-	public static boolean generateSmallInOverworld(World worldIn, int doorX, int doorY, int doorZ, Block door, int dirForward)
-	{
-		return generateSmall(worldIn, doorX, doorY, doorZ, dirForward, door, Content.yurtWallFrame, Content.yurtRoofFrame);
-	}
+	@Override
+	public boolean canSpawn(World worldIn, BlockPosBeta doorBase, EnumFacing dirForward, Size size) {
+		// determine what blueprints to use
+		final Blueprints bp = size.equals(StructureType.Size.SMALL) ? BP_SMALL
+				: size.equals(StructureType.Size.MEDIUM) ? BP_MED
+						: size.equals(StructureType.Size.LARGE) ? BP_LARGE : null;
 
-	/** Helper function */
-	public static boolean deleteSmall(World worldIn, int doorX, int doorY, int doorZ, int dirForward)
-	{
-		boolean flag = generateSmall(worldIn, doorX, doorY, doorZ, dirForward, Blocks.air, Blocks.air, Blocks.air);
-		if(worldIn.getTileEntity(doorX, doorY, doorZ) instanceof TileEntityTentDoor)
-		{
-			worldIn.removeTileEntity(doorX, doorY, doorZ);
-		}
-		if(worldIn.getTileEntity(doorX, doorY + 1, doorZ) instanceof TileEntityTentDoor)
-		{
-			worldIn.removeTileEntity(doorX, doorY + 1, doorZ);
-		}
-		return flag;
-	}
-
-	/** (Helper function) Warning: does not check canSpawnSmallYurt before generating */
-	public static boolean generateSmallInDimension(World worldIn, int doorX, int doorY, int doorZ)
-	{
-		boolean success = generateSmall(worldIn, doorX, doorY, doorZ, StructureHelper.STRUCTURE_DIR, Content.yurtDoorSmall, Content.yurtInnerWall, Content.yurtRoof);
-		// place barrier block
-		int[] pos = StructureHelper.getPosFromDoor(new int[] {doorX, doorY, doorZ}, StructureHelper.yurtBarrierSmall[0], StructureHelper.yurtBarrierSmall[1], StructureHelper.STRUCTURE_DIR);
-		worldIn.setBlock(pos[0], doorY + BARRIER_Y_SMALL, pos[2], Content.barrier);
-		// make dirt layer
-		StructureHelper.refinePlatform(worldIn, doorX, doorY, doorZ, StructureHelper.yurtWallsSmall);
-		return success;
-	}
-
-	/** Warning: does not check canSpawnSmallYurt before generating */
-	public static boolean generateSmall(World worldIn, int doorX, int doorY, int doorZ, int dirForward, Block doorBlock, Block wallBlock, Block roofBlock)
-	{	
-		int[] door = new int[] {doorX, doorY, doorZ};
-		int[] pos;
-		// make layer 1
-		StructureHelper.buildLayer(worldIn, door, dirForward, wallBlock, StructureHelper.yurtWallsSmall, WALL_HEIGHT);
-		// make layer 2
-		StructureHelper.buildLayer(worldIn, doorX, doorY + WALL_HEIGHT, doorZ, dirForward, roofBlock, StructureHelper.yurtRoof1Small, 1);
-
-		// make door
-		int doorMeta = dirForward % 2 == 0 ? 4 : 0;
-		worldIn.setBlock(doorX, doorY, doorZ, doorBlock, doorMeta, 3);
-		worldIn.setBlock(doorX, doorY + 1, doorZ, doorBlock, doorMeta + 1, 3);
-		return true;
-	}
-
-	/** Helper function */
-	public static boolean generateMedInDimension(World worldIn, int doorX, int doorY, int doorZ)
-	{
-		boolean success = generateMedium(worldIn, doorX, doorY, doorZ, StructureHelper.STRUCTURE_DIR, Content.yurtInnerWall, Content.yurtRoof);
-		// place barrier block
-		int[] pos = StructureHelper.getPosFromDoor(new int[] {doorX, doorY, doorZ}, StructureHelper.yurtBarrierMed[0], StructureHelper.yurtBarrierMed[1], StructureHelper.STRUCTURE_DIR);
-		worldIn.setBlock(pos[0], doorY + BARRIER_Y_MED, pos[2], Content.barrier);
-		// make dirt layer
-		StructureHelper.refinePlatform(worldIn, doorX, doorY, doorZ, StructureHelper.yurtWallsMed);
-		return success;
-	}
-
-	public static boolean generateMedium(World worldIn, int doorX, int doorY, int doorZ, int dirForward, Block wallBlock, Block roofBlock)
-	{
-		int[] door = new int[] {doorX, doorY, doorZ};
-		int[] pos;
-		// make layer 1
-		StructureHelper.buildLayer(worldIn, door, dirForward, wallBlock, StructureHelper.yurtWallsMed, WALL_HEIGHT);
-		// make layer 2
-		StructureHelper.buildLayer(worldIn, doorX, doorY + WALL_HEIGHT, doorZ, dirForward, roofBlock, StructureHelper.yurtRoof1Med, 1);
-		// make layer 3
-		StructureHelper.buildLayer(worldIn, doorX, doorY + WALL_HEIGHT + 1, doorZ, dirForward, roofBlock, StructureHelper.yurtRoof2Med, 1);
-		// make door
-		int doorMeta = dirForward % 2 == 0 ? 4 : 0;
-		worldIn.setBlock(doorX, doorY, doorZ, Content.yurtDoorMed, doorMeta, 3);
-		worldIn.setBlock(doorX, doorY + 1, doorZ, Content.yurtDoorMed, doorMeta + 1, 3);
-		return true;
-	}
-
-	/** Helper function */
-	public static boolean generateLargeInDimension(World worldIn, int doorX, int doorY, int doorZ)
-	{
-		boolean success = generateLarge(worldIn, doorX, doorY, doorZ, StructureHelper.STRUCTURE_DIR, Content.yurtInnerWall, Content.yurtRoof);
-		// place barrier block
-		int[] pos = StructureHelper.getPosFromDoor(new int[] {doorX, doorY, doorZ}, StructureHelper.yurtBarrierLarge[0], StructureHelper.yurtBarrierLarge[1], StructureHelper.STRUCTURE_DIR);
-		worldIn.setBlock(pos[0], doorY + BARRIER_Y_LARGE, pos[2], Content.barrier);
-		// make dirt layer
-		StructureHelper.refinePlatform(worldIn, doorX, doorY, doorZ, StructureHelper.yurtWallsLarge);
-		return success;
-	}
-
-	public static boolean generateLarge(World worldIn, int doorX, int doorY, int doorZ, int dirForward, Block wallBlock, Block roofBlock)
-	{
-		int[] door = new int[] {doorX, doorY, doorZ};
-		int[] pos;
-		// make layer 1
-		StructureHelper.buildLayer(worldIn, door, dirForward, wallBlock, StructureHelper.yurtWallsLarge, WALL_HEIGHT);
-		// make layer 2
-		StructureHelper.buildLayer(worldIn, doorX, doorY + WALL_HEIGHT, doorZ, dirForward, roofBlock, StructureHelper.yurtRoof1Large, 1);
-		// make layer 3
-		StructureHelper.buildLayer(worldIn, doorX, doorY + WALL_HEIGHT + 1, doorZ, dirForward, roofBlock, StructureHelper.yurtRoof2Large, 1);
-		// make layer 3
-		StructureHelper.buildLayer(worldIn, doorX, doorY + WALL_HEIGHT + 2, doorZ, dirForward, roofBlock, StructureHelper.yurtRoof3Large, 1);
-		// make door
-		int doorMeta = dirForward % 2 == 0 ? 4 : 0;
-		worldIn.setBlock(doorX, doorY, doorZ, Content.yurtDoorLarge, doorMeta, 3);
-		worldIn.setBlock(doorX, doorY + 1, doorZ, Content.yurtDoorLarge, doorMeta + 1, 3);
-		return true;
-
-	}
-
-	public static boolean canSpawnSmall(World worldIn, int doorX, int doorY, int doorZ, int dirForward)
-	{
-		int[] door = new int[] {doorX, doorY, doorZ};
-		int[] pos = door;
-		// check outer walls
-		for(int layer = 0; layer < WALL_HEIGHT; layer++)
-		{
-			for(int[] coord : StructureHelper.yurtWallsSmall)
-			{
-				pos = StructureHelper.getPosFromDoor(door, coord[0], coord[1], dirForward);
-				if(!StructureHelper.isReplaceableMaterial(worldIn.getBlock(pos[0], door[1] + layer, pos[2]).getMaterial()))
-				{
-					return false;
-				}
-			}
-		}
-		// check roof
-		for(int[] coord : StructureHelper.yurtRoof1Small)
-		{
-			pos = StructureHelper.getPosFromDoor(door, coord[0], coord[1], dirForward);
-			if(!StructureHelper.isReplaceableMaterial(worldIn.getBlock(pos[0], door[1] + WALL_HEIGHT, pos[2]).getMaterial()))
-			{
-				return false;
-			}
-		}
-		// check barrier space
-		pos = StructureHelper.getPosFromDoor(door, StructureHelper.yurtBarrierSmall[0], StructureHelper.yurtBarrierSmall[1], dirForward);
-		if(!StructureHelper.isReplaceableMaterial(worldIn.getBlock(pos[0], doorY + BARRIER_Y_SMALL, pos[2]).getMaterial()))
-		{
+		// check wall and roof arrays
+		if (!validateArray(worldIn, doorBase, bp.getWallCoords(), dirForward, REPLACE_BLOCK_PRED))
 			return false;
-		}
-		// passed all checks, return true
+		if (!validateArray(worldIn, doorBase, bp.getRoofCoords(), dirForward, REPLACE_BLOCK_PRED))
+			return false;
+		// passes all checks, so return true
 		return true;
 	}
 
-	/** Returns -1 if not valid. Returns direction if is valid: 0=SOUTH=z++; 1=WEST=x--; 2=NORTH=z--; 3=EAST=x++  */
-	public static int isValidSmall(World worldIn, int doorX, int doorBaseY, int doorZ)
-	{
-		int[] door = new int[] {doorX, doorBaseY, doorZ};
-		int[] pos;
-		// check each direction
-		for(int dir = 0; dir < 4; dir++)
-		{
-			boolean isValid = true;
-			for(int layer = 0; layer < WALL_HEIGHT; layer++)
-			{
-				for(int[] coord : StructureHelper.yurtWallsSmall)
-				{
-					pos = StructureHelper.getPosFromDoor(door, coord[0], coord[1], dir);
-					Block at = worldIn.getBlock(pos[0], door[1] + layer, pos[2]);
-					if(isValid && !(at instanceof IYurtBlock))
-					{
-						isValid = false;
-					}
-				}			
+	@Override
+	public boolean isValidForFacing(World worldIn, BlockPosBeta doorBase, Size size, EnumFacing facing) {
+		// make a predicate to test only for IYurtBlock blocks
+		Predicate<Block> checkBlockPred = new Predicate<Block>() {
+			@Override
+			public boolean test(Block b) {
+				return b instanceof IYurtBlock;
 			}
-			// check roof
-			for(int[] coord : StructureHelper.yurtRoof1Small)
-			{
-				pos = StructureHelper.getPosFromDoor(door, coord[0], coord[1], dir);
-				Block at = worldIn.getBlock(pos[0], door[1] + WALL_HEIGHT, pos[2]);
-				if(isValid && !(at instanceof IYurtBlock))
-				{
-					isValid = false;
-				}
-			}
-			
-			// if it passed all the checks, it's a valid yurt
-			if(isValid) return dir;
-		}
+		};
 
-		return -1;
+		final Blueprints bp = size.equals(StructureType.Size.SMALL) ? BP_SMALL
+				: size.equals(StructureType.Size.MEDIUM) ? BP_MED
+						: size.equals(StructureType.Size.LARGE) ? BP_LARGE : null;
+
+		// check wall and roof arrays
+		if (!validateArray(worldIn, doorBase, bp.getWallCoords(), facing, checkBlockPred))
+			return false;
+		if (!validateArray(worldIn, doorBase, bp.getRoofCoords(), facing, checkBlockPred))
+			return false;
+		// passes all checks, so return true
+		return true;
 	}
-	
-	public static void buildDoor(World worldIn, int doorX, int doorY, int doorZ, Block doorBlock, int dirForward)
-	{
-		int doorMeta = dirForward % 2 == 0 ? 4 : 0;
-		worldIn.setBlock(doorX, doorY, doorZ, doorBlock, doorMeta, 3);
-		worldIn.setBlock(doorX, doorY + 1, doorZ, doorBlock, doorMeta + 1, 3);
+
+	public static Blueprints makeBlueprints(final StructureType.Size size, final Blueprints bp) {
+		switch (size) {
+		case LARGE:
+			bp.addWallCoords(new int[][] {
+					// layer 1
+					{ 0, 0, -2 }, { 0, 0, -1 }, { 0, 0, 0 }, { 0, 0, 1 }, { 0, 0, 2 }, { 1, 0, 3 }, { 2, 0, 4 },
+					{ 3, 0, 4 }, { 4, 0, 4 }, { 5, 0, 4 }, { 6, 0, 4 }, { 7, 0, 3 }, { 8, 0, 2 }, { 8, 0, 1 },
+					{ 8, 0, 0 }, { 8, 0, -1 }, { 8, 0, -2 }, { 7, 0, -3 }, { 6, 0, -4 }, { 5, 0, -4 }, { 4, 0, -4 },
+					{ 3, 0, -4 }, { 2, 0, -4 }, { 1, 0, -3 },
+					// layer 2
+					{ 0, 1, -2 }, { 0, 1, -1 }, { 0, 1, 0 }, { 0, 1, 1 }, { 0, 1, 2 }, { 1, 1, 3 }, { 2, 1, 4 },
+					{ 3, 1, 4 }, { 4, 1, 4 }, { 5, 1, 4 }, { 6, 1, 4 }, { 7, 1, 3 }, { 8, 1, 2 }, { 8, 1, 1 },
+					{ 8, 1, 0 }, { 8, 1, -1 }, { 8, 1, -2 }, { 7, 1, -3 }, { 6, 1, -4 }, { 5, 1, -4 }, { 4, 1, -4 },
+					{ 3, 1, -4 }, { 2, 1, -4 }, { 1, 1, -3 },
+					// layer 3
+					{ 0, 2, -2 }, { 0, 2, -1 }, { 0, 2, 0 }, { 0, 2, 1 }, { 0, 2, 2 }, { 1, 2, 3 }, { 2, 2, 4 },
+					{ 3, 2, 4 }, { 4, 2, 4 }, { 5, 2, 4 }, { 6, 2, 4 }, { 7, 2, 3 }, { 8, 2, 2 }, { 8, 2, 1 },
+					{ 8, 2, 0 }, { 8, 2, -1 }, { 8, 2, -2 }, { 7, 2, -3 }, { 6, 2, -4 }, { 5, 2, -4 }, { 4, 2, -4 },
+					{ 3, 2, -4 }, { 2, 2, -4 }, { 1, 2, -3 } });
+			bp.addRoofCoords(new int[][] {
+					// layer 1
+					{ 1, 3, -2 }, { 1, 3, -1 }, { 1, 3, 0 }, { 1, 3, 1 }, { 1, 3, 2 }, { 2, 3, 2 }, { 2, 3, 3 },
+					{ 3, 3, 3 }, { 4, 3, 3 }, { 5, 3, 3 }, { 6, 3, 3 }, { 6, 3, 2 }, { 7, 3, 2 }, { 7, 3, 1 },
+					{ 7, 3, 0 }, { 7, 3, -1 }, { 7, 3, -2 }, { 6, 3, -2 }, { 6, 3, -3 }, { 5, 3, -3 }, { 4, 3, -3 },
+					{ 3, 3, -3 }, { 2, 3, -3 }, { 2, 3, -2 },
+					// layer 2
+					{ 2, 4, -1 }, { 2, 4, 0 }, { 2, 4, 1 }, { 3, 4, 1 }, { 3, 4, 2 }, { 4, 4, 2 }, { 5, 4, 2 },
+					{ 5, 4, 1 }, { 6, 4, 1 }, { 6, 4, 0 }, { 6, 4, -1 }, { 5, 4, -1 }, { 5, 4, -2 }, { 4, 4, -2 },
+					{ 3, 4, -2 }, { 3, 4, -1 },
+					// layer 3
+					{ 3, 5, 0 }, { 4, 5, 1 }, { 5, 5, 0 }, { 4, 5, -1 } });
+			bp.addBarrierCoords(new int[][] { { 4, 6, 0 } });
+			break;
+		case MEDIUM:
+			bp.addWallCoords(new int[][] {
+					// layer 1
+					{ 0, 0, -1 }, { 0, 0, 0 }, { 0, 0, 1 }, { 1, 0, 2 }, { 2, 0, 3 }, { 3, 0, 3 }, { 4, 0, 3 },
+					{ 5, 0, 2 }, { 6, 0, 1 }, { 6, 0, 0 }, { 6, 0, -1 }, { 5, 0, -2 }, { 4, 0, -3 }, { 3, 0, -3 },
+					{ 2, 0, -3 }, { 1, 0, -2 },
+					// layer 2
+					{ 0, 1, -1 }, { 0, 1, 0 }, { 0, 1, 1 }, { 1, 1, 2 }, { 2, 1, 3 }, { 3, 1, 3 }, { 4, 1, 3 },
+					{ 5, 1, 2 }, { 6, 1, 1 }, { 6, 1, 0 }, { 6, 1, -1 }, { 5, 1, -2 }, { 4, 1, -3 }, { 3, 1, -3 },
+					{ 2, 1, -3 }, { 1, 1, -2 },
+					// layer 3
+					{ 0, 2, -1 }, { 0, 2, 0 }, { 0, 2, 1 }, { 1, 2, 2 }, { 2, 2, 3 }, { 3, 2, 3 }, { 4, 2, 3 },
+					{ 5, 2, 2 }, { 6, 2, 1 }, { 6, 2, 0 }, { 6, 2, -1 }, { 5, 2, -2 }, { 4, 2, -3 }, { 3, 2, -3 },
+					{ 2, 2, -3 }, { 1, 2, -2 } });
+			bp.addRoofCoords(new int[][] {
+					// layer 1
+					{ 1, 3, -1 }, { 1, 3, 0 }, { 1, 3, 1 }, { 2, 3, 2 }, { 3, 3, 2 }, { 4, 3, 2 }, { 5, 3, 1 },
+					{ 5, 3, 0 }, { 5, 3, -1 }, { 4, 3, -2 }, { 3, 3, -2 }, { 2, 3, -2 },
+					// layer 2
+					{ 2, 4, -1 }, { 2, 4, 0 }, { 2, 4, 1 }, { 3, 4, 1 }, { 4, 4, 1 }, { 4, 4, 0 }, { 4, 4, -1 },
+					{ 3, 4, -1 } });
+			bp.addBarrierCoords(new int[][] { { 3, 5, 0 } });
+			break;
+		case SMALL:
+			bp.addWallCoords(new int[][] {
+					// layer 1
+					{ 0, 0, 1 }, { 0, 0, 0 }, { 0, 0, -1 }, { 1, 0, -2 }, { 2, 0, -2 }, { 3, 0, -2 }, { 4, 0, -1 },
+					{ 4, 0, 0 }, { 4, 0, 1 }, { 3, 0, 2 }, { 2, 0, 2 }, { 1, 0, 2 },
+					// layer 2
+					{ 0, 1, 1 }, { 0, 1, 0 }, { 0, 1, -1 }, { 1, 1, -2 }, { 2, 1, -2 }, { 3, 1, -2 }, { 4, 1, -1 },
+					{ 4, 1, 0 }, { 4, 1, 1 }, { 3, 1, 2 }, { 2, 1, 2 }, { 1, 1, 2 },
+					// layer 3
+					{ 0, 2, 1 }, { 0, 2, 0 }, { 0, 2, -1 }, { 1, 2, -2 }, { 2, 2, -2 }, { 3, 2, -2 }, { 4, 2, -1 },
+					{ 4, 2, 0 }, { 4, 2, 1 }, { 3, 2, 2 }, { 2, 2, 2 }, { 1, 2, 2 } });
+			bp.addRoofCoords(new int[][] { { 1, 3, 1 }, { 1, 3, 0 }, { 1, 3, -1 }, { 2, 3, -1 }, { 3, 3, -1 },
+					{ 3, 3, 0 }, { 3, 3, 1 }, { 2, 3, 1 }, { 0, 3, 0 }, { 2, 3, -2 }, { 4, 3, 0 }, { 2, 3, 2 } });
+			bp.addBarrierCoords(new int[][] { { 2, 4, 0 } });
+			break;
+		}
+		return bp;
 	}
 }
