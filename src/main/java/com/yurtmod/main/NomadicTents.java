@@ -21,7 +21,7 @@ import net.minecraftforge.common.config.Configuration;
 public class NomadicTents {
 	public static final String MODID = "yurtmod";
 	public static final String NAME = "Nomadic Tents Mod";
-	public static final String VERSION = "1.11";
+	public static final String VERSION = "1.12.0";
 	public static final String MCVERSION = "1.7.10";
 
 	@SidedProxy(clientSide = "com." + MODID + ".proxies.ClientProxy", serverSide = "com." + MODID
