@@ -3,6 +3,7 @@ package com.yurtmod.main;
 import com.yurtmod.blocks.BlockBarrier;
 import com.yurtmod.blocks.BlockBedouinRoof;
 import com.yurtmod.blocks.BlockBedouinWall;
+import com.yurtmod.blocks.BlockIndluWall;
 import com.yurtmod.blocks.BlockTentDoor;
 import com.yurtmod.blocks.BlockTentFrame;
 import com.yurtmod.blocks.BlockTentFrame.BlockToBecome;
@@ -22,8 +23,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.item.Item;
 import net.minecraft.item.Item.ToolMaterial;
 
-public class Content 
-{
+public class Content {
 	// begin blocks
 	public static Block barrier;
 	public static Block yurtRoof;
@@ -33,6 +33,7 @@ public class Content
 	public static Block yurtDoorSmall, yurtDoorMed, yurtDoorLarge;
 	public static Block tepeeDoorSmall, tepeeDoorMed, tepeeDoorLarge;
 	public static Block bedDoorSmall, bedDoorMed, bedDoorLarge;
+	public static Block indluDoorSmall, indluDoorMed, indluDoorLarge;
 	public static Block bedRoof;
 	public static Block bedWall;
 	public static Block bedWallFrame;
@@ -40,6 +41,9 @@ public class Content
 	public static Block yurtWallFrame;
 	public static Block yurtRoofFrame;
 	public static Block tepeeFrame;
+	public static Block indluFrame;
+	public static Block indluOuterWall;
+	public static Block indluInnerWall;
 	public static Block tepeeWall;
 	// begin items
 	public static Item itemTent;
@@ -49,9 +53,9 @@ public class Content
 	public static Item itemYurtWall;
 	public static Item itemTepeeWall;
 	public static Item itemBedWall;
+	public static Item itemIndluWall;
 
-	public static void mainRegistry()
-	{
+	public static void mainRegistry() {
 		initBlocks();
 		initFrameBlocks();
 		initItems();
@@ -61,8 +65,7 @@ public class Content
 		registerTileEntitys();
 	}
 
-	private static void initBlocks() 
-	{
+	private static void initBlocks() {
 		// yurt door blocks
 		yurtDoorSmall = new BlockTentDoor(StructureType.YURT_SMALL, "yurt").setBlockName("yurt_door_0");
 		yurtDoorMed = new BlockTentDoor(StructureType.YURT_MEDIUM, "yurt").setBlockName("yurt_door_1");
@@ -75,6 +78,10 @@ public class Content
 		bedDoorSmall = new BlockTentDoor(StructureType.BEDOUIN_SMALL, "bed").setBlockName("bedouin_door_0");
 		bedDoorMed = new BlockTentDoor(StructureType.BEDOUIN_MEDIUM, "bed").setBlockName("bedouin_door_1");
 		bedDoorLarge = new BlockTentDoor(StructureType.BEDOUIN_LARGE, "bed").setBlockName("bedouin_door_2");
+		// indlu door blocks
+		indluDoorSmall = new BlockTentDoor(StructureType.INDLU_SMALL, "indlu").setBlockName("indlu_door_0");
+		indluDoorMed = new BlockTentDoor(StructureType.INDLU_MEDIUM, "indlu").setBlockName("indlu_door_1");
+		indluDoorLarge = new BlockTentDoor(StructureType.INDLU_LARGE, "indlu").setBlockName("indlu_door_2");
 		// yurt blocks
 		yurtOuterWall = new BlockYurtWall("yurt_wall", "yurt_wall_inner_upper").setBlockName("yurt_wall_outer");
 		yurtInnerWall = new BlockYurtWall("yurt_wall_inner", "yurt_wall_inner_upper").setBlockName("yurt_wall_inner");
@@ -84,34 +91,42 @@ public class Content
 		// bedouin blocks
 		bedWall = new BlockBedouinWall().setBlockName("bed_wall");
 		bedRoof = new BlockBedouinRoof().setBlockName("bed_roof");
+		// indlu blocks
+		indluInnerWall = new BlockIndluWall("inner").setBlockName("indlu_wall_inner");
+		indluOuterWall = new BlockIndluWall("outer").setBlockName("indlu_wall_outer");
 		// other
-		superDirt = new BlockUnbreakable(Material.ground){}.setBlockName("yurt_floor").setBlockTextureName("minecraft:dirt");
+		superDirt = new BlockUnbreakable(Material.ground) {
+		}.setBlockName("yurt_floor").setBlockTextureName("minecraft:dirt");
 		barrier = new BlockBarrier().setBlockName("yurtmod_barrier");
 	}
 
-	private static void initFrameBlocks() 
-	{
+	private static void initFrameBlocks() {
 		yurtWallFrame = new BlockTentFrame(BlockToBecome.YURT_WALL_OUTER).setBlockName("yurt_frame_wall");
 		yurtRoofFrame = new BlockTentFrame(BlockToBecome.YURT_ROOF).setBlockName("yurt_frame_roof");
 		tepeeFrame = new BlockTentFrame(BlockToBecome.TEPEE_WALL).setBlockName("tepee_frame_wall");
 		bedWallFrame = new BlockTentFrame(BlockToBecome.BEDOUIN_WALL).setBlockName("bedouin_frame_wall");
 		bedRoofFrame = new BlockTentFrame(BlockToBecome.BEDOUIN_ROOF).setBlockName("bedouin_frame_roof");
+		indluFrame = new BlockTentFrame(BlockToBecome.INDLU_WALL_OUTER).setBlockName("indlu_frame_wall");
 	}
 
-	private static void initItems() 
-	{
+	private static void initItems() {
 		itemTent = new ItemTent().setUnlocalizedName("tent");
 		itemMallet = new ItemTentMallet(ToolMaterial.IRON).setUnlocalizedName("tent_hammer");
 		itemSuperMallet = new ItemSuperTentMallet(ToolMaterial.IRON).setUnlocalizedName("super_tent_hammer");
 		// crafting-only items
-		itemTentCanvas = new Item().setUnlocalizedName("tent_canvas").setTextureName(NomadicTents.MODID + ":tent_canvas").setCreativeTab(NomadicTents.tab);
-		itemYurtWall = new Item().setUnlocalizedName("yurt_wall_piece").setTextureName(NomadicTents.MODID + ":yurt_wall_piece").setCreativeTab(NomadicTents.tab);
-		itemTepeeWall = new Item().setUnlocalizedName("tepee_wall_piece").setTextureName(NomadicTents.MODID + ":tepee_wall_piece").setCreativeTab(NomadicTents.tab);
-		itemBedWall = new Item().setUnlocalizedName("bedouin_wall_piece").setTextureName(NomadicTents.MODID + ":bedouin_wall_piece").setCreativeTab(NomadicTents.tab);
+		itemTentCanvas = new Item().setUnlocalizedName("tent_canvas")
+				.setTextureName(NomadicTents.MODID + ":tent_canvas").setCreativeTab(NomadicTents.tab);
+		itemYurtWall = new Item().setUnlocalizedName("yurt_wall_piece")
+				.setTextureName(NomadicTents.MODID + ":yurt_wall_piece").setCreativeTab(NomadicTents.tab);
+		itemTepeeWall = new Item().setUnlocalizedName("tepee_wall_piece")
+				.setTextureName(NomadicTents.MODID + ":tepee_wall_piece").setCreativeTab(NomadicTents.tab);
+		itemBedWall = new Item().setUnlocalizedName("bedouin_wall_piece")
+				.setTextureName(NomadicTents.MODID + ":bedouin_wall_piece").setCreativeTab(NomadicTents.tab);
+		itemIndluWall = new Item().setUnlocalizedName("indlu_wall_piece")
+				.setTextureName(NomadicTents.MODID + ":indlu_wall_piece").setCreativeTab(NomadicTents.tab);
 	}
 
-	private static void registerBlocks() 
-	{
+	private static void registerBlocks() {
 		// yurt door blocks
 		register(yurtDoorSmall);
 		register(yurtDoorMed);
@@ -124,6 +139,10 @@ public class Content
 		register(bedDoorSmall);
 		register(bedDoorMed);
 		register(bedDoorLarge);
+		// indlu door blocks
+		register(indluDoorSmall);
+		register(indluDoorMed);
+		register(indluDoorLarge);
 		// yurt blocks
 		register(yurtOuterWall);
 		register(yurtInnerWall);
@@ -133,22 +152,24 @@ public class Content
 		// bdouin blocks
 		register(bedWall);
 		register(bedRoof);
+		// indlu blocks
+		register(indluOuterWall);
+		register(indluInnerWall);
 		// other blocks
 		register(superDirt);
 		register(barrier);
 	}
 
-	private static void registerFrameBlocks() 
-	{
+	private static void registerFrameBlocks() {
 		register(yurtWallFrame);
 		register(yurtRoofFrame);
 		register(tepeeFrame);
 		register(bedWallFrame);
 		register(bedRoofFrame);
+		register(indluFrame);
 	}
 
-	private static void registerItems() 
-	{
+	private static void registerItems() {
 		register(itemTent);
 		register(itemMallet);
 		register(itemSuperMallet);
@@ -157,20 +178,18 @@ public class Content
 		register(itemYurtWall);
 		register(itemTepeeWall);
 		register(itemBedWall);
+		register(itemIndluWall);
 	}
 
-	private static void registerTileEntitys() 
-	{
+	private static void registerTileEntitys() {
 		GameRegistry.registerTileEntity(TileEntityTentDoor.class, NomadicTents.MODID + "_TileEntityTentDoor");
 	}
 
-	private static void register(Item in)
-	{
+	private static void register(Item in) {
 		GameRegistry.registerItem(in, in.getUnlocalizedName());
 	}
 
-	private static void register(Block in)
-	{
+	private static void register(Block in) {
 		GameRegistry.registerBlock(in, in.getUnlocalizedName());
 	}
 }

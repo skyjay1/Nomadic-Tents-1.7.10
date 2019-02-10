@@ -9,8 +9,6 @@ import com.yurtmod.dimension.TentDimension;
 import com.yurtmod.main.Content;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockDoor;
-import net.minecraft.block.BlockDoor.EnumDoorHalf;
 import net.minecraft.block.BlockSnow;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
@@ -71,8 +69,7 @@ public abstract class StructureBase {
 		if (prevStructure != this.structure) {
 			BlockPosBeta prevDoorPos = new BlockPosBeta(cornerX, TentDimension.FLOOR_Y + 1,
 					cornerZ + prevStructure.getDoorPosition());
-			// remove previous structure and platform
-			removePlatform(worldIn, corner, prevStructure.getSize());
+			// remove previous structure
 			prevStructure.getNewStructure().remove(worldIn, prevDoorPos, TentDimension.STRUCTURE_DIR, prevStructure.getSize());
 		}
 		
@@ -127,7 +124,8 @@ public abstract class StructureBase {
 	 * Builds a 2-block-deep platform from (cornerX, cornerY - 1, cornerZ) to
 	 * (cornerX + sqWidth, cornerY, cornerZ + sqWidth), with the top layer regular
 	 * dirt and the bottom layer indestructible dirt. Automatically places
-	 * indestructible dirt if the bottom of the tent is detected. Call this AFTER
+	 * indestructible dirt if the bottom of the tent is detected, and automatically
+	 * fixes irregularities formed after a tent upgrade. Call this AFTER
 	 * generating the structure or things will not work!
 	 * 
 	 * @return true if the platform was built successfully
@@ -140,31 +138,16 @@ public abstract class StructureBase {
 				// place top block: dirt or indestructible dirt based on what's above it
 				// (this assumes that the structure already exists)
 				BlockPosBeta at = corner.add(i, 0, j);
-				Block above = at.up(1).getBlock(worldIn);
-				Block topState = above instanceof BlockUnbreakable ? Content.superDirt : Blocks.dirt;
-				if (at.isAirBlock(worldIn) || topState == Content.superDirt) {
+				Block blockAt = at.getBlock(worldIn);
+				// if this position is below a BlockUnbreakable, use Super Dirt, else use regular dirt
+				Block topState = at.up(1).getBlock(worldIn) instanceof BlockUnbreakable 
+						? Content.superDirt : Blocks.dirt;
+				// if this position is considered replaceable, place the block, else skip this step
+				if (blockAt == Blocks.air || blockAt == Blocks.dirt || blockAt == Content.superDirt) {
 					at.setBlock(worldIn, topState, 0, 2);
 				}
 				// place bottom block: always indestructible dirt
 				at.down(1).setBlock(worldIn, Content.superDirt, 0, 2);
-			}
-		}
-		return true;
-	}
-
-	private static boolean removePlatform(final World worldIn, final BlockPosBeta corner, StructureType.Size size) {
-		int sqWidth = size.getSquareWidth();
-		// make a base from corner x,y,z to +x,y,+z
-		for (int i = 0; i < sqWidth; i++) {
-			for (int j = 0; j < sqWidth; j++) {
-				// remove any DIRT or SUPER DIRT in the top layer of platform
-				BlockPosBeta at = corner.add(i, 0, j);
-				Block blockAt = at.getBlock(worldIn);
-				if (blockAt == Blocks.dirt || blockAt == Content.superDirt) {
-					at.setBlockToAir(worldIn);
-					// remove the bottom layer of platform
-					at.down(1).setBlockToAir(worldIn);
-				}
 			}
 		}
 		return true;
@@ -178,7 +161,17 @@ public abstract class StructureBase {
 	/** dirForward 0=SOUTH=z++; 1=WEST=x--; 2=NORTH=z--; 3=EAST=x++ */
 	public static final BlockPosBeta getPosFromDoor(final BlockPosBeta doorPos, final int disForward, final int disUp,
 			final int disRight, final EnumFacing forward) {
-		EnumFacing right = forward..rotateY();
+		EnumFacing right = forward;
+		switch(forward) {
+		case EAST: right = EnumFacing.SOUTH;
+			break;
+		case NORTH: right = EnumFacing.EAST;
+			break;
+		case SOUTH: right = EnumFacing.WEST;
+			break;
+		case WEST: default: right = EnumFacing.NORTH;
+			break;
+		}
 		return doorPos.offset(forward, disForward).offset(right, disRight).up(disUp);
 	}
 
@@ -187,11 +180,10 @@ public abstract class StructureBase {
 	 * use correct IProperty
 	 **/
 	public static void buildDoor(final World world, final BlockPosBeta doorBase, final Block door, final EnumFacing dir) {
-		int upper = 0, lower = 0;
-		if (door instanceof BlockTentDoor) {
-			EnumFacing.Axis axis = dir.getAxis() == EnumFacing.Axis.Z ? EnumFacing.Axis.Z : EnumFacing.Axis.X;
-			lower = doorL.withProperty(BlockDoor.HALF, EnumDoorHalf.LOWER).withProperty(BlockTentDoor.AXIS, axis);
-			upper = doorU.withProperty(BlockDoor.HALF, EnumDoorHalf.UPPER).withProperty(BlockTentDoor.AXIS, axis);
+		int upper = 1, lower = 0;
+		if(dir == EnumFacing.NORTH || dir == EnumFacing.SOUTH) {
+			upper += 2;
+			lower += 2;
 		}
 		doorBase.setBlock(world, door, lower, 3);
 		doorBase.up(1).setBlock(world, door, upper, 3);
@@ -211,11 +203,21 @@ public abstract class StructureBase {
 
 	/**
 	 * Helper method for
-	 * {@code buildLayer(World,BlockPosBeta,EnumFacing,Block,BlockPosBeta[])}
+	 * {@link #buildLayer(World,BlockPosBeta,EnumFacing,Block,int,BlockPosBeta[])}
 	 **/
 	public void buildLayer(final World worldIn, final BlockPosBeta door, final EnumFacing dirForward, final Block block,
 			final BlockPosBeta[] coordinates) {
-		buildLayer(worldIn, door, dirForward, block, coordinates);
+		buildLayer(worldIn, door, dirForward, block, 0, coordinates);
+	}
+	
+	/**
+	 * @return true if the frame blocks were placed successfully. Assumes that you
+	 *         are not in Tent Dimension.
+	 **/
+	public boolean generateFrameStructure(final World worldIn, final int doorX, final int doorY, final int doorZ, final EnumFacing dirForward,
+			final StructureType.Size size) {
+		return generate(worldIn, new BlockPosBeta(doorX, doorY, doorZ), dirForward, size, this.getType().getDoorBlock(),
+				this.getType().getFrameBlock(false), this.getType().getFrameBlock(true));
 	}
 
 	/**
@@ -276,6 +278,15 @@ public abstract class StructureBase {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * @return true if there is empty space to create a structure of given size at
+	 *         this location
+	 **/
+	public boolean canSpawn(final World worldIn, final int doorX, final int doorY, final int doorZ, 
+			final EnumFacing dirForward, final StructureType.Size size) {
+		return canSpawn(worldIn, new BlockPosBeta(doorX, doorY, doorZ), dirForward, size);
 	}
 
 	/** @return true if a structure was successfully generated **/

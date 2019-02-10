@@ -2,9 +2,11 @@ package com.yurtmod.main;
 
 import java.io.File;
 
+import com.yurtmod.crafting.RecipeManager;
 import com.yurtmod.dimension.TentDimension;
 import com.yurtmod.proxies.CommonProxy;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.SidedProxy;
@@ -16,43 +18,38 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 
 @Mod(modid = NomadicTents.MODID, name = NomadicTents.NAME, version = NomadicTents.VERSION, acceptedMinecraftVersions = NomadicTents.MCVERSION)
-public class NomadicTents 
-{
+public class NomadicTents {
 	public static final String MODID = "yurtmod";
 	public static final String NAME = "Nomadic Tents Mod";
 	public static final String VERSION = "1.11";
 	public static final String MCVERSION = "1.7.10";
 
-	@SidedProxy(clientSide = "com." + MODID + ".proxies.ClientProxy", serverSide = "com." + MODID + ".proxies.CommonProxy")
+	@SidedProxy(clientSide = "com." + MODID + ".proxies.ClientProxy", serverSide = "com." + MODID
+			+ ".proxies.CommonProxy")
 	public static CommonProxy proxy;
 
 	public static CreativeTabs tab;
 
 	@EventHandler
-	public void preInit(FMLPreInitializationEvent event)
-	{
-		tab = new CreativeTabs("yurtMain")
-		{
+	public void preInit(FMLPreInitializationEvent event) {
+		tab = new CreativeTabs("yurtMain") {
 			@Override
-			public Item getTabIconItem() 
-			{
+			public Item getTabIconItem() {
 				return Content.itemTent;
 			}
 		};
-		String path = event.getSuggestedConfigurationFile().getAbsolutePath().replaceFirst(MODID + ".cfg", "NomadicTents.cfg");
+		String path = event.getSuggestedConfigurationFile().getAbsolutePath().replaceFirst(MODID + ".cfg",
+				"NomadicTents.cfg");
 		Config.mainRegistry(new Configuration(new File(path)));
 		Content.mainRegistry();
-		Crafting.mainRegistry();
+		RecipeManager.mainRegistry();
 		TentDimension.mainRegistry();
 	}
 
 	@EventHandler
-	public void init(FMLInitializationEvent event)
-	{    
-		if(Config.SLEEP_TO_DAY_IN_TENT_DIM)
-		{
-			MinecraftForge.EVENT_BUS.register(new SleepHandler());
-		}
+	public void init(FMLInitializationEvent event) {
+		MinecraftForge.EVENT_BUS.register(new TentEventHandler());
+		FMLCommonHandler.instance().bus().register(new TentEventHandler());
 		proxy.registerRenders();
 	}
 }

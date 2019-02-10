@@ -33,7 +33,7 @@ public class StructureTepee extends StructureBase {
 		switch (size) {
 		case LARGE:
 			// build all relevant layers
-			this.buildLayer(worldIn, doorBase, dirForward, wallBlock, 0, BP_LARGE.getWallCoords());
+			this.buildLayer(worldIn, doorBase, dirForward, wallBlock, BP_LARGE.getWallCoords());
 			// make door
 			buildDoor(worldIn, doorBase, doorBlock, dirForward);
 			// add dimension-only features
@@ -50,7 +50,7 @@ public class StructureTepee extends StructureBase {
 			return true;
 		case MEDIUM:
 			// build all relevant layers
-			this.buildLayer(worldIn, doorBase, dirForward, wallBlock, 0, BP_MED.getWallCoords());
+			this.buildLayer(worldIn, doorBase, dirForward, wallBlock, BP_MED.getWallCoords());
 			// make door
 			buildDoor(worldIn, doorBase, doorBlock, dirForward);
 			// add dimension-only features
@@ -67,7 +67,7 @@ public class StructureTepee extends StructureBase {
 			return true;
 		case SMALL:
 			// build all relevant layers
-			this.buildLayer(worldIn, doorBase, dirForward, wallBlock, 0, BP_SMALL.getWallCoords());
+			this.buildLayer(worldIn, doorBase, dirForward, wallBlock, BP_SMALL.getWallCoords());
 			// make door
 			buildDoor(worldIn, doorBase, doorBlock, dirForward);
 			// add dimension-only features
@@ -112,21 +112,22 @@ public class StructureTepee extends StructureBase {
 	@Override
 	public void buildLayer(World worldIn, BlockPosBeta doorPos, EnumFacing dirForward, Block state,
 			BlockPosBeta[] coordinates) {
+		// Special Math for Tepee Block pattern placement
 		for (BlockPosBeta coord : coordinates) {
 			BlockPosBeta pos = getPosFromDoor(doorPos, coord, dirForward);
+			int meta = 0;
 			// if it's a tepee block, calculate what kind of design it should have
-			if (state instanceof BlockTepeeWall) {
-				int tepeeState;
+			if (state == Content.tepeeWall) {
 				if (pos.getY() % 2 == 1) {
 					// psuedo-random seed ensures that all blocks that are same y-dis from door get
 					// the same seed
 					int randSeed = Math.abs(pos.getY() * 123 + doorPos.getX() + doorPos.getZ());
-					tepeeState = BlockTepeeWall.getMetaForRandomPattern(new Random(randSeed));
-				} else
-					tepeeState = BlockTepeeWall.getMetaForRandomDesignWithChance(worldIn.rand);
-				pos.setBlock(worldIn, Content.tepeeWall, tepeeState);
-			} else
-				pos.setBlock(worldIn, state, 0, 3);
+					meta = BlockTepeeWall.getMetaForRandomPattern(new Random(randSeed));
+				} else {
+					meta = BlockTepeeWall.getMetaForRandomDesignWithChance(worldIn.rand);
+				}
+			}
+			pos.setBlock(worldIn, state, meta, 3);
 		}
 	}
 

@@ -1,15 +1,18 @@
 package com.yurtmod.structure;
 
-import com.sun.javafx.geom.Vec3d;
-
 import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 
-public class BlockPosBeta extends Vec3d {
+public class BlockPosBeta {
 	
-	public BlockPosBeta(int x, int y, int z) {
-		super(x, y, z);
+	private final double x, y, z;
+	
+	public BlockPosBeta(int xCoord, int yCoord, int zCoord) {
+		this.x = xCoord;
+		this.y = yCoord;
+		this.z = zCoord;
 	}
 	
 	public int getX() {
@@ -66,5 +69,41 @@ public class BlockPosBeta extends Vec3d {
 
 	public BlockPosBeta add(int x, int y, int z) {
 		return new BlockPosBeta(getX() + x, getY() + y, getZ() + z);
+	}
+	
+	public BlockPosBeta offset(EnumFacing dir, int amount) {
+		int xCoord = this.getX();
+		int yCoord = this.getY();
+		int zCoord = this.getZ();
+		switch(dir) {
+		case EAST: 
+			xCoord += amount;
+			break;
+		case NORTH: 
+			zCoord += amount;
+			break;
+		case SOUTH: 
+			zCoord -= amount;
+			break;
+		case WEST: 
+			xCoord -= amount;
+			break;
+		default: break;
+		}
+		return new BlockPosBeta(xCoord, yCoord, zCoord);
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof BlockPosBeta) {
+			BlockPosBeta p = (BlockPosBeta) o;
+			return p.getX() == this.getX() && p.getY() == this.getY() && p.getZ() == this.getZ();
+		}
+		return false;
+	}
+
+	@Override
+	public String toString() {
+		return "[x=" + x + ", y=" + y + ", z=" + z + "]";
 	}
 }

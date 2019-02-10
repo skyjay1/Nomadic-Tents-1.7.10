@@ -1,18 +1,16 @@
 package com.yurtmod.dimension;
 
-import com.yurtmod.structure.DimensionStructureBase;
-import com.yurtmod.structure.StructureBedouin;
-import com.yurtmod.structure.StructureHelper;
-import com.yurtmod.structure.StructureTepee;
+import com.yurtmod.structure.StructureBase;
 import com.yurtmod.structure.StructureType;
-import com.yurtmod.structure.StructureYurt;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.WorldServer;
 
 public class TentTeleporter extends Teleporter {
+	public final StructureType prevStructure;
 	public final StructureType structure;
 	public final int yurtCornerX, yurtCornerY, yurtCornerZ;
 	public final double prevX, prevY, prevZ;
@@ -20,7 +18,7 @@ public class TentTeleporter extends Teleporter {
 	public final WorldServer worldServer;
 
 	public TentTeleporter(int dimensionFrom, WorldServer worldTo, int cornerX, int cornerY, int cornerZ, double lastX,
-			double lastY, double lastZ, StructureType structureType) {
+			double lastY, double lastZ, StructureType prevStructureType, StructureType structureType) {
 		super(worldTo);
 		this.prevDimID = dimensionFrom;
 		this.worldServer = worldTo;
@@ -30,12 +28,13 @@ public class TentTeleporter extends Teleporter {
 		this.prevX = lastX;
 		this.prevY = lastY;
 		this.prevZ = lastZ;
+		this.prevStructure = prevStructureType;
 		this.structure = structureType;
 	}
 
 	@Override
 	public void placeInPortal(Entity entity, double x, double y, double z, float f) {
-		if (entity instanceof EntityPlayer) {
+		if (entity instanceof EntityPlayer && !entity.worldObj.isRemote) {
 			EntityPlayer player = (EntityPlayer) entity;
 
 			double entityX;
@@ -50,15 +49,14 @@ public class TentTeleporter extends Teleporter {
 				entityZ = this.yurtCornerZ + this.structure.getDoorPosition() + 0.5D;
 				yaw = -90F;
 
-				// generate the structure - each tent should check if it already exists before
-				// generating
-				DimensionStructureBase gen = StructureType.getGenFromStructureType(this.structure);
+				// generate the structure - tent will check if it already exists
+				StructureBase gen = this.structure.getNewStructure();
 				if (gen != null) {
-					gen.generateInTentDimension(prevDimID, worldServer, yurtCornerX, yurtCornerZ, prevX, prevY, prevZ);
-				} else {
-					StructureHelper.generatePlatform(worldServer, yurtCornerX, yurtCornerY, yurtCornerZ, 8);
-					System.out.println("Error: unhandled structure type resulted in empty platform");
+					gen.generateInTentDimension(prevDimID, worldServer, yurtCornerX, yurtCornerZ, prevX, prevY, prevZ, prevStructure);
 				}
+				// also synchronize the time between Tent and Overworld dimensions
+				long overworldTime = MinecraftServer.getServer().worldServerForDimension(0).getWorldTime();
+				worldServer.getWorldInfo().setWorldTime(overworldTime);
 			} else {
 				entityX = this.prevX;
 				entityY = this.prevY;

@@ -1,6 +1,7 @@
 package com.yurtmod.structure;
 
 import com.yurtmod.blocks.TileEntityTentDoor;
+import com.yurtmod.dimension.TentDimension;
 import com.yurtmod.items.ItemTent;
 import com.yurtmod.main.Config;
 import com.yurtmod.main.Content;
@@ -12,9 +13,10 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
 
 public enum StructureType {
-	YURT_SMALL(Size.SMALL, 2), YURT_MEDIUM(Size.MEDIUM, 3), YURT_LARGE(Size.LARGE, 4), TEPEE_SMALL(Size.SMALL, 2),
-	TEPEE_MEDIUM(Size.MEDIUM, 3), TEPEE_LARGE(Size.LARGE, 4), BEDOUIN_SMALL(Size.SMALL, 2),
-	BEDOUIN_MEDIUM(Size.MEDIUM, 3), BEDOUIN_LARGE(Size.LARGE, 4);
+	YURT_SMALL(Size.SMALL, 2), YURT_MEDIUM(Size.MEDIUM, 3), YURT_LARGE(Size.LARGE, 4), 
+	TEPEE_SMALL(Size.SMALL, 2),	TEPEE_MEDIUM(Size.MEDIUM, 3), TEPEE_LARGE(Size.LARGE, 4), 
+	BEDOUIN_SMALL(Size.SMALL, 2), BEDOUIN_MEDIUM(Size.MEDIUM, 3), BEDOUIN_LARGE(Size.LARGE, 4), 
+	INDLU_SMALL(Size.SMALL, 2), INDLU_MEDIUM(Size.MEDIUM, 3), INDLU_LARGE(Size.LARGE, 4);
 
 	private final StructureType.Size size;
 	private final int doorOffsetZ;
@@ -46,7 +48,7 @@ public enum StructureType {
 	}
 
 	public ItemStack getDropStack() {
-		return new ItemStack(Content.ITEM_TENT, 1, this.ordinal());
+		return new ItemStack(Content.itemTent, 1, this.ordinal());
 	}
 	
 	public ItemStack getDropStack(TileEntityTentDoor te) {
@@ -67,7 +69,7 @@ public enum StructureType {
 	public static void applyToTileEntity(EntityPlayer player, ItemStack stack, TileEntityTentDoor te) {
 		if (stack.getTagCompound() == null || !stack.getTagCompound().hasKey(ItemTent.OFFSET_X)) {
 			System.out.println("[StructureType] ItemStack did not have any NBT information to pass to the TileEntity!");
-			te.getWorld().removeTileEntity(te.getPos());
+			te.getWorldObj().removeTileEntity(te.xCoord, te.yCoord, te.zCoord);
 			return;
 		}
 
@@ -80,6 +82,29 @@ public enum StructureType {
 		te.setOffsetX(offsetx);
 		te.setOffsetZ(offsetz);
 		te.setOverworldXYZ(player.posX, player.posY, player.posZ);
+	}
+	
+
+	public boolean isEnabled() {
+		switch (this) {
+		case BEDOUIN_LARGE:
+		case BEDOUIN_MEDIUM:
+		case BEDOUIN_SMALL:
+			return Config.ALLOW_BEDOUIN;
+		case TEPEE_LARGE:
+		case TEPEE_MEDIUM:
+		case TEPEE_SMALL:
+			return Config.ALLOW_TEPEE;
+		case YURT_LARGE:
+		case YURT_MEDIUM:
+		case YURT_SMALL:
+			return Config.ALLOW_YURT;
+		case INDLU_SMALL:
+		case INDLU_MEDIUM:
+		case INDLU_LARGE:
+			return Config.ALLOW_INDLU;
+		}
+		return false;
 	}
 
 	public StructureBase getNewStructure() {
@@ -96,6 +121,10 @@ public enum StructureType {
 		case YURT_MEDIUM:
 		case YURT_SMALL:
 			return new StructureYurt(this);
+		case INDLU_SMALL:
+		case INDLU_MEDIUM:
+		case INDLU_LARGE:
+			return new StructureIndlu(this);
 		}
 		return null;
 	}
@@ -120,6 +149,12 @@ public enum StructureType {
 			return Content.bedDoorMed;
 		case BEDOUIN_LARGE:
 			return Content.bedDoorLarge;
+		case INDLU_SMALL:
+			return Content.indluDoorSmall;
+		case INDLU_MEDIUM:
+			return Content.indluDoorMed;
+		case INDLU_LARGE:
+			return Content.indluDoorLarge;
 		}
 		return null;
 	}
@@ -129,15 +164,19 @@ public enum StructureType {
 		case YURT_SMALL:
 		case YURT_MEDIUM:
 		case YURT_LARGE:
-			return dimID == Config.DIMENSION_ID ? Content.YURT_WALL_INNER : Content.YURT_WALL_OUTER;
+			return TentDimension.isTent(dimID) ? Content.yurtInnerWall : Content.yurtOuterWall;
 		case TEPEE_SMALL:
 		case TEPEE_MEDIUM:
 		case TEPEE_LARGE:
-			return Content.TEPEE_WALL;
+			return Content.tepeeWall;
 		case BEDOUIN_SMALL:
 		case BEDOUIN_MEDIUM:
 		case BEDOUIN_LARGE:
-			return Content.BEDOUIN_WALL;
+			return Content.bedWall;
+		case INDLU_SMALL:
+		case INDLU_MEDIUM:
+		case INDLU_LARGE:
+			return TentDimension.isTent(dimID) ? Content.indluInnerWall : Content.indluOuterWall;
 		}
 		return null;
 	}
@@ -147,15 +186,19 @@ public enum StructureType {
 		case YURT_SMALL:
 		case YURT_MEDIUM:
 		case YURT_LARGE:
-			return Content.YURT_ROOF;
+			return Content.yurtRoof;
 		case TEPEE_SMALL:
 		case TEPEE_MEDIUM:
 		case TEPEE_LARGE:
-			return Content.TEPEE_WALL;
+			return Content.tepeeWall;
 		case BEDOUIN_SMALL:
 		case BEDOUIN_MEDIUM:
 		case BEDOUIN_LARGE:
-			return Content.BEDOUIN_ROOF;
+			return Content.bedRoof;
+		case INDLU_SMALL:
+		case INDLU_MEDIUM:
+		case INDLU_LARGE:
+			return Content.indluOuterWall;
 		}
 		return null;
 	}
@@ -165,7 +208,7 @@ public enum StructureType {
 		case YURT_SMALL:
 		case YURT_MEDIUM:
 		case YURT_LARGE:
-			return isRoof ? Content.FRAME_YURT_ROOF : Content.FRAME_YURT_WALL;
+			return isRoof ? Content.yurtRoofFrame : Content.yurtWallFrame;
 		case TEPEE_SMALL:
 		case TEPEE_MEDIUM:
 		case TEPEE_LARGE:
@@ -173,7 +216,11 @@ public enum StructureType {
 		case BEDOUIN_SMALL:
 		case BEDOUIN_MEDIUM:
 		case BEDOUIN_LARGE:
-			return isRoof ? Content.FRAME_BEDOUIN_ROOF : Content.FRAME_BEDOUIN_WALL;
+			return isRoof ? Content.bedRoofFrame : Content.bedWallFrame;
+		case INDLU_SMALL:
+		case INDLU_MEDIUM:
+		case INDLU_LARGE:
+			return Content.indluFrame;
 		}
 		return null;
 	}

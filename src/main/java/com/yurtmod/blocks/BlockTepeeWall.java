@@ -9,6 +9,7 @@ import com.yurtmod.blocks.Categories.ITepeeBlock;
 import com.yurtmod.dimension.TentDimension;
 import com.yurtmod.main.Config;
 import com.yurtmod.main.NomadicTents;
+import com.yurtmod.structure.BlockPosBeta;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -30,20 +31,19 @@ public class BlockTepeeWall extends BlockUnbreakable implements ITepeeBlock {
 	public BlockTepeeWall() {
 		super(Material.cloth);
 		this.setBlockTextureName(NomadicTents.MODID + ":tepee_wall_0");
+		this.setLightOpacity(LIGHT_OPACITY);
 	}
 
 	@Override
 	public void onBlockAdded(World worldIn, int x, int y, int z) {
 		if (!TentDimension.isTent(worldIn) && worldIn.getBlockMetadata(x, y, z) == 0) {
 			int metaToSet;
-			BlockPos doorLoc = this.findDoorNearby(worldIn, x, y, z);
-			// debug:
-			// System.out.println("searched for door. y=" + y + ", flag=" + flag);
-			if (doorLoc != null && Math.abs(y - doorLoc.y) % 2 == 0) {
-				TileEntityTentDoor te = (TileEntityTentDoor) worldIn.getTileEntity(doorLoc.x, doorLoc.y, doorLoc.z);
+			BlockPosBeta doorLoc = this.findDoorNearby(worldIn, x, y, z);
+			if (doorLoc != null && Math.abs(y - doorLoc.getY()) % 2 == 0) {
+				TileEntityTentDoor te = (TileEntityTentDoor) doorLoc.getTileEntity(worldIn);
 				// psuedo-random seed guarantees all attached blocks that are same y-dis from
 				// door get the same seed
-				int randSeed = y + doorLoc.x + doorLoc.z + te.getOffsetX() * 123 + te.getOffsetZ() * 321;
+				int randSeed = y + doorLoc.getX() + doorLoc.getZ() + te.getOffsetX() * 123 + te.getOffsetZ() * 321;
 				metaToSet = getMetaForRandomPattern(new Random(randSeed));
 				worldIn.setBlockMetadataWithNotify(x, y, z, metaToSet, 2);
 			} else if (worldIn.rand.nextInt(100) < Config.TEPEE_DECORATED_CHANCE) {
@@ -76,6 +76,7 @@ public class BlockTepeeWall extends BlockUnbreakable implements ITepeeBlock {
 	 * returns a list of blocks with the same ID, but different meta (eg: wood
 	 * returns 4 blocks)
 	 */
+	@Override
 	@SideOnly(Side.CLIENT)
 	public void getSubBlocks(Item item, CreativeTabs tab, List list) {
 		for (int i = 0; i < NUM_TEXTURES; i++) {
@@ -104,7 +105,7 @@ public class BlockTepeeWall extends BlockUnbreakable implements ITepeeBlock {
 	}
 
 	public static int getMetaForRandomDesignWithChance(Random rand) {
-		return rand.nextInt(Config.TEPEE_DECORATED_CHANCE) == 0 ? rand.nextInt(NUM_TEXTURES - NUM_PATTERNS - 1) + NUM_PATTERNS + 1 : 0;
+		return rand.nextInt(100) < Config.TEPEE_DECORATED_CHANCE ? rand.nextInt(NUM_TEXTURES - NUM_PATTERNS - 1) + NUM_PATTERNS + 1 : 0;
 	}
 
 	/**
@@ -115,20 +116,16 @@ public class BlockTepeeWall extends BlockUnbreakable implements ITepeeBlock {
 	 * @param pos   BlockPos to begin searching from
 	 * @return BlockPos of lower tepee door if found, else null
 	 **/
-	private BlockPos findDoorNearby(World world, int myX, int myY, int myZ) {
-		List<BlockPos> checked = new LinkedList();
-		BlockPos pos = new BlockPos(myX, myY, myZ);
-		while (pos != null && !(world.getBlock(pos.x, pos.y, pos.z) instanceof BlockTentDoor)) {
-			System.out.println("checking for door at " + pos);
+	private BlockPosBeta findDoorNearby(World world, int myX, int myY, int myZ) {
+		List<BlockPosBeta> checked = new LinkedList();
+		BlockPosBeta pos = new BlockPosBeta(myX, myY, myZ);
+		while (pos != null && !(world.getBlock(pos.getX(), pos.getY(), pos.getZ()) instanceof BlockTentDoor)) {
 			pos = getNextTepeeBlock(world, checked, pos);
 		}
 		if (pos == null)
 			return null;
-		boolean isLower = world.getBlockMetadata(pos.x, pos.x, pos.x) % 4 == 0;
-		// debug:
-		System.out.println("Found a door at " + pos);
-		System.out.println("isLower = " + isLower);
-		return isLower ? pos : new BlockPos(pos.x, pos.y - 1, pos.z);
+		boolean isLower = world.getBlockMetadata(pos.getX(), pos.getY(), pos.getZ()) % 4 == 0;
+		return isLower ? pos : pos.down(1);
 	}
 
 	/**
@@ -139,17 +136,17 @@ public class BlockTepeeWall extends BlockUnbreakable implements ITepeeBlock {
 	 * @param exclude list of BlockPos already checked
 	 * @param pos     center of the 3x3x3 box
 	 **/
-	private BlockPos getNextTepeeBlock(World worldIn, List<BlockPos> exclude, BlockPos pos) {
+	private static BlockPosBeta getNextTepeeBlock(World worldIn, List<BlockPosBeta> exclude, BlockPosBeta pos) {
 		int radius = 1;
 		// favor blocks below this one - useful because most tepee blocks will be above
 		// the door
 		for (int y = -radius; y <= radius; y++) {
 			for (int x = -radius; x <= radius; x++) {
 				for (int z = -radius; z <= radius; z++) {
-					int x0 = pos.x + x;
-					int y0 = pos.y + y;
-					int z0 = pos.z + z;
-					BlockPos checkPos = new BlockPos(x0, y0, z0);
+					int x0 = pos.getX() + x;
+					int y0 = pos.getY() + y;
+					int z0 = pos.getZ() + z;
+					BlockPosBeta checkPos = new BlockPosBeta(x0, y0, z0);
 					Block at = worldIn.getBlock(x0, y0, z0);
 					if (!exclude.contains(checkPos)) {
 						if (at instanceof ITepeeBlock || at instanceof IFrameBlock) {
@@ -161,29 +158,5 @@ public class BlockTepeeWall extends BlockUnbreakable implements ITepeeBlock {
 			}
 		}
 		return null;
-	}
-
-	private static class BlockPos {
-		public final int x, y, z;
-
-		BlockPos(int x0, int y0, int z0) {
-			this.x = x0;
-			this.y = y0;
-			this.z = z0;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof BlockPos) {
-				BlockPos p = (BlockPos) o;
-				return p.x == this.x && p.y == this.y && p.z == this.z;
-			}
-			return false;
-		}
-
-		@Override
-		public String toString() {
-			return "[x=" + x + ", y=" + y + ", z=" + z + "]";
-		}
 	}
 }
