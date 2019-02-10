@@ -8,6 +8,7 @@ Desktop.ini
 # Folders
 gradle
 eclipse
+bin
 *.class
 
 # Recycle Bin used on file shares
