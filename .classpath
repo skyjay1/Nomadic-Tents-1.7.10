@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="output" path="bin"/>
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="src" path="src/main/resources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER" exported="true"/>
+	<classpathentry kind="output" path="bin"/>
+	<classpathentry sourcepath="C:/Users/sky01/.gradle/caches/modules-2/files-2.1/mcp.mobius.waila/Waila/1.5.10_1.7.10/9edfa5c1ec1cbc86f9610b52258d170905fbda77/Waila-1.5.10_1.7.10-sources.jar" kind="lib" path="C:/Users/sky01/.gradle/caches/modules-2/files-2.1/mcp.mobius.waila/Waila/1.5.10_1.7.10/15d268565941880488ac81ac13ad185123bbbfbd/Waila-1.5.10_1.7.10-dev.jar" exported="true"/>
 	<classpathentry sourcepath="C:/Users/sky01/.gradle/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forgeSrc-1.7.10-10.13.4.1558-1.7.10-sources.jar" kind="lib" path="C:/Users/sky01/.gradle/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forgeSrc-1.7.10-10.13.4.1558-1.7.10.jar" exported="true"/>
 	<classpathentry sourcepath="C:/Users/sky01/.gradle/caches/modules-2/files-2.1/net.minecraft/launchwrapper/1.12/fd80cad9a1b967ce2ff20529dc54e520d5338d7/launchwrapper-1.12-sources.jar" kind="lib" path="C:/Users/sky01/.gradle/caches/modules-2/files-2.1/net.minecraft/launchwrapper/1.12/111e7bea9c968cdb3d06ef4632bf7ff0824d0f36/launchwrapper-1.12.jar" exported="true"/>
 	<classpathentry kind="lib" path="C:/Users/sky01/.gradle/caches/modules-2/files-2.1/com.google.code.findbugs/jsr305/1.3.9/40719ea6961c0cb6afaeb6a921eaa1f6afd4cfdf/jsr305-1.3.9.jar" exported="true"/>

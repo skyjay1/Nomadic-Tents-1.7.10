@@ -1,3 +1,7 @@
+# folders
+.gradle/
+.settings/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
@@ -12,6 +16,7 @@ bin
 build
 *.bin
 *.class
+*.classpath
 
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
